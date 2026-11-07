@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WM-Verdict 标注</title>
+<style>
+:root{
+  --bg:#f6f7f9; --fg:#1c1e21; --card:#ffffff; --line:#e3e5e8; --accent:#2563eb;
+  --muted:#6b7280; --ok:#16a34a; --warn:#d97706;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#111418; --fg:#e8eaed; --card:#1a1e24; --line:#2a2f37; --accent:#60a5fa;
+    --muted:#9aa2ad; --ok:#4ade80; --warn:#fbbf24;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111418; --fg:#e8eaed; --card:#1a1e24; --line:#2a2f37; --accent:#60a5fa;
+  --muted:#9aa2ad; --ok:#4ade80; --warn:#fbbf24;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.6 system-ui,"Noto Sans SC",sans-serif;padding:0 16px}
+.wrap{max-width:1100px;margin:0 auto;padding:24px 0 64px}
+h1{font-size:20px;margin:0 0 4px}
+.sub{color:var(--muted);font-size:13px;margin-bottom:20px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px}
+input,select,button,textarea{font:inherit;color:inherit}
+input,textarea{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+button{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:8px 16px;cursor:pointer}
+button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+button:disabled{opacity:.45;cursor:default}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.imgs{display:flex;gap:12px;flex-wrap:wrap;margin:12px 0}
+.imgs figure{margin:0;flex:1 1 320px;min-width:280px}
+.imgs img{width:100%;border:1px solid var(--line);border-radius:8px;background:#000}
+.imgs figcaption{font-size:12px;color:var(--muted);text-align:center;margin-top:4px}
+.labels{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.labels button{background:var(--bg);color:var(--fg);border:1px solid var(--line)}
+.labels button.sel{background:var(--accent);color:#fff;border-color:var(--accent)}
+.meta{font-size:12px;color:var(--muted)}
+.prog{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:8px 0}
+.prog i{display:block;height:100%;background:var(--ok)}
+.kbd{font-size:12px;color:var(--muted)}
+.kbd b{border:1px solid var(--line);border-radius:4px;padding:0 5px;font-weight:600}
+.err{color:#dc2626;font-size:13px;white-space:pre-wrap}
+.ok{color:var(--ok)}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>WM-Verdict 人工标注</h1>
+  <div class="sub">每格（模型 × 任务 × 扰动档）抽 1/10；参考图永远在左，被判图在右。标注只代表你本人，可随时修改。</div>
+
+  <div id="login" class="panel" hidden>
+    <h3 style="margin-top:0">登录</h3>
+    <div class="row" style="max-width:460px">
+      <input id="email" type="email" placeholder="邮箱（需在受邀名单内）">
+      <input id="password" type="password" placeholder="密码">
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button id="btnLogin">登录</button>
+      <button id="btnSignup" class="ghost">首次使用：注册</button>
+      <button id="btnMagic" class="ghost">改用邮件链接登录</button>
+    </div>
+    <p id="loginMsg" class="err"></p>
+  </div>
+
+  <div id="app" hidden>
+    <div class="panel">
+      <div class="row" style="justify-content:space-between">
+        <div class="row">
+          <span id="who" class="meta"></span>
+          <select id="roundSel"></select>
+          <label class="meta"><input type="checkbox" id="onlyTodo" checked style="width:auto"> 只看我没标的</label>
+        </div>
+        <button id="btnLogout" class="ghost">退出</button>
+      </div>
+      <div class="prog"><i id="progBar" style="width:0%"></i></div>
+      <div class="meta" id="progTxt"></div>
+    </div>
+
+    <div id="cardPanel" class="panel" hidden>
+      <div class="meta" id="cardMeta"></div>
+      <div style="font-weight:600;margin:6px 0" id="cardQ"></div>
+      <div class="imgs">
+        <figure><img id="refImg" alt="参考图"><figcaption>参考图（真实环境该长什么样）</figcaption></figure>
+        <figure><img id="mainImg" alt="被判图"><figcaption>被判图（给出你的判断）</figcaption></figure>
+      </div>
+      <div class="labels" id="labelBtns"></div>
+      <textarea id="noteBox" rows="2" placeholder="备注（可选）：扭曲、看不清、理由……"></textarea>
+      <div class="row" style="margin-top:10px;justify-content:space-between">
+        <div class="row">
+          <button id="btnPrev" class="ghost">← 上一张</button>
+          <button id="btnNext" class="ghost">下一张 →</button>
+        </div>
+        <span class="kbd">快捷键：<b>1</b>–<b>9</b> 选标签并下一张 · <b>←</b>/<b>→</b> 翻页 · <b>Enter</b> 保存备注</span>
+      </div>
+      <p id="saveMsg" class="meta"></p>
+    </div>
+    <div id="donePanel" class="panel" hidden>🎉 这一轮你已全部标完。可以取消勾选"只看我没标的"复查，或等下一轮。</div>
+  </div>
+  <p id="fatal" class="err"></p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script>
+const C = window.WMV_CONFIG || {};
+let sb;
+try { sb = supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY); }
+catch (e) { document.getElementById("fatal").textContent = "config.js 未配置 Supabase 项目信息。"; }
+
+const $ = (id) => document.getElementById(id);
+let me = null, cards = [], mine = new Map(), idx = 0, roundId = null;
+
+function dlink(u){ return (u||"").replace("www.dropbox.com","dl.dropboxusercontent.com").replace(/([?&])dl=0/,"$1").replace(/[?&]$/,""); }
+
+async function init(){
+  if (!sb) return;
+  const { data: { session } } = await sb.auth.getSession();
+  session ? enter(session.user) : showLogin();
+}
+function showLogin(){ $("login").hidden = false; $("app").hidden = true; }
+
+$("btnLogin").onclick = async () => {
+  const { error } = await sb.auth.signInWithPassword({ email: $("email").value.trim(), password: $("password").value });
+  $("loginMsg").textContent = error ? "登录失败：" + error.message : "";
+  if (!error) init();
+};
+$("btnSignup").onclick = async () => {
+  const { error } = await sb.auth.signUp({ email: $("email").value.trim(), password: $("password").value });
+  $("loginMsg").textContent = error ? "注册失败：" + error.message
+    : "注册成功。如果项目开了邮箱确认，去邮箱点一下确认链接再回来登录。";
+};
+$("btnMagic").onclick = async () => {
+  const { error } = await sb.auth.signInWithOtp({ email: $("email").value.trim(), options: { emailRedirectTo: location.href } });
+  $("loginMsg").textContent = error ? "发送失败：" + error.message : "登录链接已发到邮箱，点开即登录。";
+};
+$("btnLogout").onclick = async () => { await sb.auth.signOut(); location.reload(); };
+
+async function enter(user){
+  me = user;
+  $("login").hidden = true; $("app").hidden = false;
+  $("who").textContent = user.email;
+  const { data: allowed, error } = await sb.from("allowed_emails").select("email").eq("email", user.email);
+  if (error || !allowed || !allowed.length) {
+    $("app").hidden = true; $("login").hidden = false;
+    $("loginMsg").textContent = "该邮箱不在受邀名单内，请联系管理员添加。";
+    return;
+  }
+  const { data: rounds } = await sb.from("rounds").select("id,name").order("id", { ascending: false });
+  $("roundSel").innerHTML = (rounds||[]).map(r=>`<option value="${r.id}">${r.name}</option>`).join("");
+  if (rounds && rounds.length) { roundId = rounds[0].id; await loadRound(); }
+}
+$("roundSel").onchange = async e => { roundId = +e.target.value; await loadRound(); };
+$("onlyTodo").onchange = () => { idx = nextTodo(0); render(); };
+
+async function loadRound(){
+  const { data: cs } = await sb.from("cards").select("*").eq("round_id", roundId).order("sort_key").order("id");
+  cards = cs || [];
+  const ids = cards.map(c=>c.id);
+  mine = new Map();
+  for (let i = 0; i < ids.length; i += 400) {
+    const { data: as } = await sb.from("annotations").select("card_id,label,note")
+      .eq("user_id", me.id).in("card_id", ids.slice(i, i+400));
+    (as||[]).forEach(a => mine.set(a.card_id, a));
+  }
+  idx = nextTodo(0); render();
+}
+function nextTodo(from){
+  if (!$("onlyTodo").checked) return Math.min(from, cards.length-1);
+  for (let i = from; i < cards.length; i++) if (!mine.has(cards[i].id)) return i;
+  for (let i = 0; i < cards.length; i++) if (!mine.has(cards[i].id)) return i;
+  return -1;
+}
+function render(){
+  const done = cards.filter(c=>mine.has(c.id)).length;
+  $("progBar").style.width = cards.length ? (100*done/cards.length)+"%" : "0%";
+  $("progTxt").textContent = `本轮 ${cards.length} 张，你已标 ${done} 张`;
+  if (idx < 0 || !cards.length) { $("cardPanel").hidden = true; $("donePanel").hidden = !cards.length ? true : false; return; }
+  $("donePanel").hidden = true; $("cardPanel").hidden = false;
+  const c = cards[idx];
+  $("cardMeta").textContent = `#${idx+1}/${cards.length} · ${c.model} · ${c.task} · ${c.family}/${c.level} · ${c.unit_id}`;
+  $("cardQ").textContent = c.question;
+  $("refImg").src = dlink(c.ref_url || c.img_url);
+  $("mainImg").src = dlink(c.img_url);
+  const cur = mine.get(c.id);
+  const labels = c.label_set || [];
+  $("labelBtns").innerHTML = labels.map((l,i)=>
+    `<button data-l="${l}" class="${cur && cur.label===l ? "sel":""}"><b>${i+1}</b> ${l}</button>`).join("");
+  [...$("labelBtns").children].forEach(b => b.onclick = () => save(b.dataset.l));
+  $("noteBox").value = cur && cur.note || "";
+  $("saveMsg").textContent = cur ? "已有你的标注，可修改。" : "";
+}
+async function save(label){
+  const c = cards[idx];
+  const rec = { card_id: c.id, user_id: me.id, email: me.email, label, note: $("noteBox").value || null, updated_at: new Date().toISOString() };
+  const { error } = await sb.from("annotations").upsert(rec, { onConflict: "card_id,user_id" });
+  if (error) { $("saveMsg").textContent = "保存失败：" + error.message; return; }
+  mine.set(c.id, rec);
+  idx = nextTodo($("onlyTodo").checked ? idx : idx + 1);
+  if (!$("onlyTodo").checked) idx = Math.min(idx, cards.length - 1);
+  render();
+}
+$("btnPrev").onclick = () => { idx = Math.max(0, idx-1); render(); };
+$("btnNext").onclick = () => { idx = Math.min(cards.length-1, idx+1); render(); };
+document.addEventListener("keydown", e => {
+  if ($("cardPanel").hidden || e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") {
+    if (e.key === "Enter" && e.target.id === "noteBox" && mine.get(cards[idx]?.id)) save(mine.get(cards[idx].id).label);
+    return;
+  }
+  if (e.key === "ArrowLeft") $("btnPrev").click();
+  else if (e.key === "ArrowRight") $("btnNext").click();
+  else if (/^[1-9]$/.test(e.key)) { const b = $("labelBtns").children[+e.key-1]; if (b) b.click(); }
+});
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+[
+  {"model":"lingbot","task":"T1","family":"O","level":"O3",
+   "png_dir":"wm_verdict/libero/out/content_review/lingbot_famO/cards",
+   "units_glob_jsonl":"wm_verdict/libero/out/runs/lingbot_famO/records_t3.*.jsonl",
+   "unit_filter_level":"O3",
+   "ref":"wm_verdict/libero/out/content_review/lingbot_famO/jasmine/real_reference.png",
+   "question":"按整段轨迹判：抽屉是否关好、碗是否已取出？",
+   "labels":["looks_success","borderline","not_success_but_triggered","uncertain"]}
+]
