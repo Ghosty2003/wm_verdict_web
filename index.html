@@ -144,7 +144,8 @@ async function enter(user){
   me = user;
   $("login").hidden = true; $("app").hidden = false;
   $("who").textContent = user.email;
-  const { data: allowed, error } = await sb.from("allowed_emails").select("email").eq("email", user.email);
+  const { data: allowed, error } = C.OPEN_ACCESS ? { data: [1], error: null }
+    : await sb.from("allowed_emails").select("email").eq("email", user.email);
   if (error || !allowed || !allowed.length) {
     $("app").hidden = true; $("login").hidden = false;
     $("loginMsg").textContent = "该邮箱不在受邀名单内，请联系管理员添加。";
