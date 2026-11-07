@@ -124,18 +124,27 @@ async function init(){
 }
 function showLogin(){ $("login").hidden = false; $("app").hidden = true; }
 
+function creds(needPw){
+  const email = $("email").value.trim(), password = $("password").value;
+  if (!email) { $("loginMsg").textContent = "请先在上面填邮箱（如果浏览器自动填充了，请点一下输入框重新输入）。"; return null; }
+  if (needPw && password.length < 6) { $("loginMsg").textContent = "请填密码（至少 6 位）。"; return null; }
+  return { email, password };
+}
 $("btnLogin").onclick = async () => {
-  const { error } = await sb.auth.signInWithPassword({ email: $("email").value.trim(), password: $("password").value });
+  const c = creds(true); if (!c) return;
+  const { error } = await sb.auth.signInWithPassword(c);
   $("loginMsg").textContent = error ? "登录失败：" + error.message : "";
   if (!error) init();
 };
 $("btnSignup").onclick = async () => {
-  const { error } = await sb.auth.signUp({ email: $("email").value.trim(), password: $("password").value });
+  const c = creds(true); if (!c) return;
+  const { error } = await sb.auth.signUp(c);
   $("loginMsg").textContent = error ? "注册失败：" + error.message
     : "注册成功。如果项目开了邮箱确认，去邮箱点一下确认链接再回来登录。";
 };
 $("btnMagic").onclick = async () => {
-  const { error } = await sb.auth.signInWithOtp({ email: $("email").value.trim(), options: { emailRedirectTo: location.href } });
+  const c = creds(false); if (!c) return;
+  const { error } = await sb.auth.signInWithOtp({ email: c.email, options: { emailRedirectTo: location.href } });
   $("loginMsg").textContent = error ? "发送失败：" + error.message : "登录链接已发到邮箱，点开即登录。";
 };
 $("btnLogout").onclick = async () => { await sb.auth.signOut(); location.reload(); };
