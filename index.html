@@ -21,29 +21,34 @@
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.6 system-ui,"Noto Sans SC",sans-serif;padding:0 16px}
-.wrap{max-width:1100px;margin:0 auto;padding:24px 0 64px}
+.wrap{max-width:1200px;margin:0 auto;padding:24px 0 64px}
 h1{font-size:20px;margin:0 0 4px}
 .sub{color:var(--muted);font-size:13px;margin-bottom:20px}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px}
 input,select,button,textarea{font:inherit;color:inherit}
 input,textarea{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+select{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
 button{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:8px 16px;cursor:pointer}
 button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
 button:disabled{opacity:.45;cursor:default}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.imgs{margin:12px 0}
-.imgs figure{margin:0 0 14px}
-.imgs img{width:100%;border:1px solid var(--line);border-radius:8px;background:#000}
-.imgs figcaption{font-size:12px;color:var(--muted);text-align:center;margin-top:4px}
-.imgs figure.ref{max-width:620px}
-.labels{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.desc{border-left:3px solid var(--accent);padding:4px 12px;margin:8px 0;font-size:14px}
+.desc b{display:inline-block;min-width:110px}
+.refbox{max-width:620px;margin:12px 0}
+.refbox img{width:100%;border:1px solid var(--line);border-radius:8px;background:#000}
+.refbox figcaption{font-size:12px;color:var(--muted);text-align:center;margin-top:4px}
+.modelrow{border-top:2px solid var(--line);margin-top:18px;padding-top:12px}
+.modelrow h3{margin:0 0 8px;font-size:16px}
+.unit{border:1px solid var(--line);border-radius:10px;padding:12px;margin:10px 0}
+.unit.done{border-color:var(--ok)}
+.unit img{width:100%;border:1px solid var(--line);border-radius:8px;background:#000;display:block}
+.meta{font-size:12px;color:var(--muted)}
+.labels{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 4px}
 .labels button{background:var(--bg);color:var(--fg);border:1px solid var(--line)}
 .labels button.sel{background:var(--accent);color:#fff;border-color:var(--accent)}
-.meta{font-size:12px;color:var(--muted)}
+.labels + textarea{margin-top:4px}
 .prog{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:8px 0}
 .prog i{display:block;height:100%;background:var(--ok)}
-.kbd{font-size:12px;color:var(--muted)}
-.kbd b{border:1px solid var(--line);border-radius:4px;padding:0 5px;font-weight:600}
 .err{color:#dc2626;font-size:13px;white-space:pre-wrap}
 .ok{color:var(--ok)}
 a{color:var(--accent)}
@@ -52,7 +57,7 @@ a{color:var(--accent)}
 <body>
 <div class="wrap">
   <h1>WM-Verdict Human Annotation</h1>
-  <div class="sub">The image being judged is on top; the smaller reference below shows the real environment. Labels are yours alone and can be changed anytime.</div>
+  <div class="sub">One page = one task × one perturbation level. The reference image appears once per page; below it, each model has its own row of images to judge. Labels are yours alone and can be changed anytime.</div>
 
   <div id="login" class="panel" hidden>
     <h3 style="margin-top:0">Sign in</h3>
@@ -74,6 +79,7 @@ a{color:var(--accent)}
         <div class="row">
           <span id="who" class="meta"></span>
           <select id="roundSel"></select>
+          <select id="groupSel"></select>
           <label class="meta"><input type="checkbox" id="onlyTodo" checked style="width:auto"> Only show cards I haven't labeled</label>
         </div>
         <button id="btnLogout" class="ghost">Sign out</button>
@@ -82,21 +88,16 @@ a{color:var(--accent)}
       <div class="meta" id="progTxt"></div>
     </div>
 
-    <div id="cardPanel" class="panel" hidden>
-      <div class="meta" id="cardMeta"></div>
-      <div style="font-weight:600;margin:6px 0" id="cardQ"></div>
-      <div class="imgs">
-        <figure><img id="mainImg" alt="image being judged"><figcaption>Image being judged — give your verdict on the LAST frame</figcaption></figure>
-        <figure class="ref"><img id="refImg" alt="reference"><figcaption>Reference — what the real environment should look like</figcaption></figure>
-      </div>
-      <div class="labels" id="labelBtns"></div>
-      <textarea id="noteBox" rows="2" placeholder="Notes (optional): distortion, hard to see, your reasoning…"></textarea>
-      <div class="row" style="margin-top:10px;justify-content:space-between">
-        <div class="row">
-          <button id="btnPrev" class="ghost">← Prev</button>
-          <button id="btnNext" class="ghost">Next →</button>
-        </div>
-        <span class="kbd">Shortcuts: <b>1</b>–<b>9</b> pick label &amp; advance · <b>←</b>/<b>→</b> navigate · <b>Enter</b> save note</span>
+    <div id="groupPanel" class="panel" hidden>
+      <div class="meta" id="groupMeta"></div>
+      <div class="desc" id="taskDesc"></div>
+      <div class="desc" id="pertDesc"></div>
+      <figure class="refbox"><img id="refImg" alt="reference"><figcaption>Reference — what the real environment should look like (shared by every image on this page)</figcaption></figure>
+      <div id="modelRows"></div>
+      <div class="row" style="margin-top:14px;justify-content:space-between">
+        <button id="btnPrev" class="ghost">← Previous page</button>
+        <span class="meta">←/→ keys switch pages</span>
+        <button id="btnNext" class="ghost">Next page →</button>
       </div>
       <p id="saveMsg" class="meta"></p>
     </div>
@@ -106,7 +107,7 @@ a{color:var(--accent)}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=2"></script>
+<script src="config.js?v=3"></script>
 <script>
 const C = window.WMV_CONFIG || {};
 let sb;
@@ -114,7 +115,20 @@ try { sb = supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY); }
 catch (e) { document.getElementById("fatal").textContent = "config.js is missing the Supabase project settings."; }
 
 const $ = (id) => document.getElementById(id);
-let me = null, cards = [], mine = new Map(), idx = 0, roundId = null;
+const MODEL_NAME = { lingbot: "LingBot-VA", openwam: "OpenWAM-α" };
+
+const TASK_INFO = {
+  t3: { title: "Close the drawer (bowl put away)",
+        desc: "The robot must put the bowl away and close the drawer. Judge the LAST frame of each strip: is the drawer fully closed and the bowl placed? A white gap line along the drawer front means it is NOT fully closed." },
+  t5: { title: "Place the target object into the goal location",
+        desc: "Judge the LAST frame of each strip: has the target object ended up inside the goal location? Choose “in” if it is inside, “out” if not, “uncertain” if you cannot tell." },
+};
+const PERT_INFO = {
+  "O":    l => `Occlusion level ${l}. A gray occluder patch is pasted onto the ONLY real frame the model sees before it imagines the rest of the episode. O1 → O5 = occluder progressively larger / covering more of the scene. The reference and your judgment target are never occluded.`,
+  "base": () => "No perturbation. Baseline imagination-quality review: judge whether the imagined rollout itself looks like a successful episode.",
+};
+
+let me = null, cards = [], mine = new Map(), groups = [], gidx = 0, roundId = null;
 
 function dlink(u){ return (u||"").replace("www.dropbox.com","dl.dropboxusercontent.com").replace(/([?&])dl=0/,"$1").replace(/[?&]$/,""); }
 
@@ -154,19 +168,23 @@ async function enter(user){
   me = user;
   $("login").hidden = true; $("app").hidden = false;
   $("who").textContent = user.email;
-  const { data: allowed, error } = C.OPEN_ACCESS ? { data: [1], error: null }
-    : await sb.from("allowed_emails").select("email").eq("email", user.email);
-  if (error || !allowed || !allowed.length) {
-    $("app").hidden = true; $("login").hidden = false;
-    $("loginMsg").textContent = "This email is not on the invite list — please contact the organizer.";
-    return;
+  if (!C.OPEN_ACCESS) {
+    const { data: allowed, error } = await sb.from("allowed_emails").select("email").eq("email", user.email);
+    if (error || !allowed || !allowed.length) {
+      $("app").hidden = true; $("login").hidden = false;
+      $("loginMsg").textContent = "This email is not on the invite list — please contact the organizer.";
+      return;
+    }
   }
   const { data: rounds } = await sb.from("rounds").select("id,name").order("id", { ascending: false });
   $("roundSel").innerHTML = (rounds||[]).map(r=>`<option value="${r.id}">${r.name}</option>`).join("");
   if (rounds && rounds.length) { roundId = rounds[0].id; await loadRound(); }
 }
 $("roundSel").onchange = async e => { roundId = +e.target.value; await loadRound(); };
-$("onlyTodo").onchange = () => { idx = nextTodo(0); render(); };
+$("groupSel").onchange = e => { gidx = +e.target.value; render(); };
+$("onlyTodo").onchange = () => { gidx = nextTodoGroup(gidx); render(); };
+
+function gkey(c){ return `${c.task}|${c.family}|${c.level}`; }
 
 async function loadRound(){
   const { data: cs } = await sb.from("cards").select("*").eq("round_id", roundId).order("sort_key").order("id");
@@ -178,53 +196,87 @@ async function loadRound(){
       .eq("user_id", me.id).in("card_id", ids.slice(i, i+400));
     (as||[]).forEach(a => mine.set(a.card_id, a));
   }
-  idx = nextTodo(0); render();
+  const seen = new Map();
+  cards.forEach(c => { const k = gkey(c); if (!seen.has(k)) seen.set(k, []); seen.get(k).push(c); });
+  groups = [...seen.entries()].map(([k, cs]) => ({ key: k, cards: cs }))
+    .sort((a,b) => a.key.localeCompare(b.key));
+  $("groupSel").innerHTML = groups.map((g,i)=>{
+    const [task,fam,lev] = g.key.split("|");
+    return `<option value="${i}">${task} · ${fam==="base" ? "baseline" : fam+"/"+lev} (${g.cards.length})</option>`;
+  }).join("");
+  gidx = nextTodoGroup(0); render();
 }
-function nextTodo(from){
-  if (!$("onlyTodo").checked) return Math.min(from, cards.length-1);
-  for (let i = from; i < cards.length; i++) if (!mine.has(cards[i].id)) return i;
-  for (let i = 0; i < cards.length; i++) if (!mine.has(cards[i].id)) return i;
+function groupDone(g){ return g.cards.every(c => mine.has(c.id)); }
+function nextTodoGroup(from){
+  if (!$("onlyTodo").checked) return Math.min(Math.max(from,0), groups.length-1);
+  for (let i = Math.max(from,0); i < groups.length; i++) if (!groupDone(groups[i])) return i;
+  for (let i = 0; i < groups.length; i++) if (!groupDone(groups[i])) return i;
   return -1;
 }
 function render(){
   const done = cards.filter(c=>mine.has(c.id)).length;
   $("progBar").style.width = cards.length ? (100*done/cards.length)+"%" : "0%";
   $("progTxt").textContent = `${cards.length} cards in this round · you have labeled ${done}`;
-  if (idx < 0 || !cards.length) { $("cardPanel").hidden = true; $("donePanel").hidden = !cards.length ? true : false; return; }
-  $("donePanel").hidden = true; $("cardPanel").hidden = false;
-  const c = cards[idx];
-  $("cardMeta").textContent = `#${idx+1}/${cards.length} · ${c.model} · ${c.task} · ${c.family}/${c.level} · ${c.unit_id}`;
-  $("cardQ").textContent = c.question;
-  $("refImg").src = dlink(c.ref_url || c.img_url);
-  $("mainImg").src = dlink(c.img_url);
-  const cur = mine.get(c.id);
-  const labels = c.label_set || [];
-  $("labelBtns").innerHTML = labels.map((l,i)=>
-    `<button data-l="${l}" class="${cur && cur.label===l ? "sel":""}"><b>${i+1}</b> ${l}</button>`).join("");
-  [...$("labelBtns").children].forEach(b => b.onclick = () => save(b.dataset.l));
-  $("noteBox").value = cur && cur.note || "";
-  $("saveMsg").textContent = cur ? "You already labeled this card — you can change it." : "";
+  if (gidx < 0 || !groups.length) { $("groupPanel").hidden = true; $("donePanel").hidden = !groups.length; return; }
+  $("donePanel").hidden = true; $("groupPanel").hidden = false;
+  $("groupSel").value = gidx;
+  const g = groups[gidx];
+  const [task, fam, lev] = g.key.split("|");
+  const ti = TASK_INFO[task] || { title: task, desc: g.cards[0].question };
+  $("groupMeta").textContent = `Page ${gidx+1}/${groups.length} · ${g.cards.length} images on this page`;
+  $("taskDesc").innerHTML = `<b>Task ${task.toUpperCase()}</b> ${ti.title} — ${ti.desc}`;
+  const pf = PERT_INFO[fam] || (l => `Perturbation ${fam} ${l||""}`);
+  $("pertDesc").innerHTML = `<b>Perturbation</b> ${pf(lev)}`;
+  $("refImg").src = dlink(g.cards[0].ref_url || g.cards[0].img_url);
+
+  const byModel = new Map();
+  g.cards.forEach(c => { if (!byModel.has(c.model)) byModel.set(c.model, []); byModel.get(c.model).push(c); });
+  $("modelRows").innerHTML = "";
+  for (const [model, mcs] of byModel) {
+    const sec = document.createElement("div");
+    sec.className = "modelrow";
+    sec.innerHTML = `<h3>${MODEL_NAME[model] || model} <span class="meta">(${mcs.filter(c=>mine.has(c.id)).length}/${mcs.length} labeled)</span></h3>`;
+    for (const c of mcs) {
+      if ($("onlyTodo").checked && mine.has(c.id)) continue;
+      sec.appendChild(unitEl(c));
+    }
+    $("modelRows").appendChild(sec);
+  }
 }
-async function save(label){
-  const c = cards[idx];
-  const rec = { card_id: c.id, user_id: me.id, email: me.email, label, note: $("noteBox").value || null, updated_at: new Date().toISOString() };
+function unitEl(c){
+  const cur = mine.get(c.id);
+  const d = document.createElement("div");
+  d.className = "unit" + (cur ? " done" : "");
+  const labels = c.label_set || [];
+  d.innerHTML = `
+    <div class="meta">${c.unit_id}${cur ? " · <span class='ok'>labeled</span>" : ""}</div>
+    <img loading="lazy" src="${dlink(c.img_url)}" alt="${c.unit_id}">
+    <div class="labels">${labels.map(l=>`<button data-l="${l}" class="${cur && cur.label===l ? "sel":""}">${l}</button>`).join("")}</div>
+    <textarea rows="1" placeholder="Notes (optional)">${cur && cur.note || ""}</textarea>`;
+  const ta = d.querySelector("textarea");
+  [...d.querySelectorAll(".labels button")].forEach(b => b.onclick = () => save(c, b.dataset.l, ta.value, d));
+  return d;
+}
+async function save(c, label, note, el){
+  const rec = { card_id: c.id, user_id: me.id, email: me.email, label, note: note || null, updated_at: new Date().toISOString() };
   const { error } = await sb.from("annotations").upsert(rec, { onConflict: "card_id,user_id" });
   if (error) { $("saveMsg").textContent = "Save failed: " + error.message; return; }
+  $("saveMsg").textContent = "";
   mine.set(c.id, rec);
-  idx = nextTodo($("onlyTodo").checked ? idx : idx + 1);
-  if (!$("onlyTodo").checked) idx = Math.min(idx, cards.length - 1);
-  render();
+  el.classList.add("done");
+  [...el.querySelectorAll(".labels button")].forEach(b => b.classList.toggle("sel", b.dataset.l === label));
+  const g = groups[gidx];
+  const done = cards.filter(x=>mine.has(x.id)).length;
+  $("progBar").style.width = (100*done/cards.length)+"%";
+  $("progTxt").textContent = `${cards.length} cards in this round · you have labeled ${done}`;
+  if (groupDone(g)) { gidx = nextTodoGroup(gidx); render(); }
 }
-$("btnPrev").onclick = () => { idx = Math.max(0, idx-1); render(); };
-$("btnNext").onclick = () => { idx = Math.min(cards.length-1, idx+1); render(); };
+$("btnPrev").onclick = () => { gidx = Math.max(0, gidx-1); render(); };
+$("btnNext").onclick = () => { gidx = Math.min(groups.length-1, gidx+1); render(); };
 document.addEventListener("keydown", e => {
-  if ($("cardPanel").hidden || e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") {
-    if (e.key === "Enter" && e.target.id === "noteBox" && mine.get(cards[idx]?.id)) save(mine.get(cards[idx].id).label);
-    return;
-  }
+  if ($("groupPanel").hidden || e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") return;
   if (e.key === "ArrowLeft") $("btnPrev").click();
   else if (e.key === "ArrowRight") $("btnNext").click();
-  else if (/^[1-9]$/.test(e.key)) { const b = $("labelBtns").children[+e.key-1]; if (b) b.click(); }
 });
 init();
 </script>
