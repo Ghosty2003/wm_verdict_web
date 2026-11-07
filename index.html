@@ -39,9 +39,12 @@ button:disabled{opacity:.45;cursor:default}
 .refbox figcaption{font-size:12px;color:var(--muted);text-align:center;margin-top:4px}
 .modelrow{border-top:2px solid var(--line);margin-top:18px;padding-top:12px}
 .modelrow h3{margin:0 0 8px;font-size:16px}
-.unit{border:1px solid var(--line);border-radius:10px;padding:12px;margin:10px 0}
+.units{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px}
+.unit{flex:0 0 380px;border:1px solid var(--line);border-radius:10px;padding:10px}
 .unit.done{border-color:var(--ok)}
-.unit img{width:100%;border:1px solid var(--line);border-radius:8px;background:#000;display:block}
+.unit img{width:100%;border:1px solid var(--line);border-radius:8px;background:#000;display:block;cursor:zoom-in}
+#lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:9;cursor:zoom-out}
+#lightbox img{max-width:98vw;max-height:96vh}
 .meta{font-size:12px;color:var(--muted)}
 .labels{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 4px}
 .labels button{background:var(--bg);color:var(--fg);border:1px solid var(--line)}
@@ -105,6 +108,7 @@ a{color:var(--accent)}
   </div>
   <p id="fatal" class="err"></p>
 </div>
+<div id="lightbox" onclick="this.style.display='none'"><img id="lightboxImg" alt="zoom"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js?v=3"></script>
@@ -235,11 +239,14 @@ function render(){
   for (const [model, mcs] of byModel) {
     const sec = document.createElement("div");
     sec.className = "modelrow";
-    sec.innerHTML = `<h3>${MODEL_NAME[model] || model} <span class="meta">(${mcs.filter(c=>mine.has(c.id)).length}/${mcs.length} labeled)</span></h3>`;
+    sec.innerHTML = `<h3>${MODEL_NAME[model] || model} <span class="meta">(${mcs.filter(c=>mine.has(c.id)).length}/${mcs.length} labeled · click an image to zoom)</span></h3>`;
+    const rowEl = document.createElement("div");
+    rowEl.className = "units";
     for (const c of mcs) {
       if ($("onlyTodo").checked && mine.has(c.id)) continue;
-      sec.appendChild(unitEl(c));
+      rowEl.appendChild(unitEl(c));
     }
+    sec.appendChild(rowEl);
     $("modelRows").appendChild(sec);
   }
 }
@@ -255,6 +262,7 @@ function unitEl(c){
     <textarea rows="1" placeholder="Notes (optional)">${cur && cur.note || ""}</textarea>`;
   const ta = d.querySelector("textarea");
   [...d.querySelectorAll(".labels button")].forEach(b => b.onclick = () => save(c, b.dataset.l, ta.value, d));
+  d.querySelector("img").onclick = () => { $("lightboxImg").src = dlink(c.img_url); $("lightbox").style.display = "flex"; };
   return d;
 }
 async function save(c, label, note, el){
