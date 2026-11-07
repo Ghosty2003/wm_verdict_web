@@ -3,4 +3,7 @@
 window.WMV_CONFIG = {
   SUPABASE_URL: "https://jrkbstpomsyyxfbpshmt.supabase.co",
   SUPABASE_ANON_KEY: "sb_publishable_tAPGEkCGEQ-LszK6YduWRA_PuTfmoI3",
+  // true = 任何注册用户都能标注（数据库里也要执行 supabase/open_access.sql）；
+  // false = 只有 allowed_emails 白名单内的邮箱能用。
+  OPEN_ACCESS: true,
 };
