@@ -27,40 +27,38 @@ h1{font-size:20px;margin:0 0 4px}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px}
 input,select,button,textarea{font:inherit;color:inherit}
 input,textarea{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
-select{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+select{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;max-width:320px}
 button{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:8px 16px;cursor:pointer}
 button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
 button:disabled{opacity:.45;cursor:default}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .desc{border-left:3px solid var(--accent);padding:4px 12px;margin:8px 0;font-size:14px}
 .desc b{display:inline-block;min-width:110px}
-.refbox{max-width:620px;margin:12px 0}
-.refbox img{width:100%;border:1px solid var(--line);border-radius:8px;background:#000}
-.refbox figcaption{font-size:12px;color:var(--muted);text-align:center;margin-top:4px}
-.modelrow{border-top:2px solid var(--line);margin-top:18px;padding-top:12px}
-.modelrow h3{margin:0 0 8px;font-size:16px}
-.units{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px}
-.unit{flex:0 0 380px;border:1px solid var(--line);border-radius:10px;padding:10px}
-.unit.done{border-color:var(--ok)}
-.unit img{width:100%;border:1px solid var(--line);border-radius:8px;background:#000;display:block;cursor:zoom-in}
-#lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:9;cursor:zoom-out}
-#lightbox img{max-width:98vw;max-height:96vh}
-.meta{font-size:12px;color:var(--muted)}
-.labels{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 4px}
+.modeltag{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:2px 10px;font-weight:600;margin-right:8px}
+.mainbox{margin:12px 0 4px}
+.mainbox img{width:100%;border:1px solid var(--line);border-radius:8px;background:#000;display:block;cursor:zoom-in}
+.mainbox figcaption,.refbox figcaption{font-size:12px;color:var(--muted);text-align:center;margin-top:4px}
+.refbox{max-width:560px;margin:10px 0}
+.refbox img{width:100%;border:1px solid var(--line);border-radius:8px;background:#000;cursor:zoom-in}
+.labels{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 4px}
 .labels button{background:var(--bg);color:var(--fg);border:1px solid var(--line)}
 .labels button.sel{background:var(--accent);color:#fff;border-color:var(--accent)}
-.labels + textarea{margin-top:4px}
+.meta{font-size:12px;color:var(--muted)}
 .prog{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:8px 0}
 .prog i{display:block;height:100%;background:var(--ok)}
+.kbd{font-size:12px;color:var(--muted)}
+.kbd b{border:1px solid var(--line);border-radius:4px;padding:0 5px;font-weight:600}
 .err{color:#dc2626;font-size:13px;white-space:pre-wrap}
 .ok{color:var(--ok)}
 a{color:var(--accent)}
+#lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:9;cursor:zoom-out}
+#lightbox img{max-width:98vw;max-height:96vh}
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>WM-Verdict Human Annotation</h1>
-  <div class="sub">One page = one task × one perturbation level. The reference image appears once per page; below it, each model has its own row of images to judge. Labels are yours alone and can be changed anytime.</div>
+  <div class="sub">One page = one item. Use ←/→ (or the buttons) to move to the previous / next item; the dropdown switches the task × perturbation group. Labels are yours alone and can be changed anytime.</div>
 
   <div id="login" class="panel" hidden>
     <h3 style="margin-top:0">Sign in</h3>
@@ -82,7 +80,7 @@ a{color:var(--accent)}
         <div class="row">
           <span id="who" class="meta"></span>
           <select id="roundSel"></select>
-          <select id="groupSel"></select>
+          <select id="groupSel" title="Task × perturbation group"></select>
           <label class="meta"><input type="checkbox" id="onlyTodo" checked style="width:auto"> Only show cards I haven't labeled</label>
         </div>
         <button id="btnLogout" class="ghost">Sign out</button>
@@ -91,16 +89,23 @@ a{color:var(--accent)}
       <div class="meta" id="progTxt"></div>
     </div>
 
-    <div id="groupPanel" class="panel" hidden>
-      <div class="meta" id="groupMeta"></div>
+    <div id="cardPanel" class="panel" hidden>
       <div class="desc" id="taskDesc"></div>
       <div class="desc" id="pertDesc"></div>
-      <figure class="refbox"><img id="refImg" alt="reference"><figcaption>Reference — what the real environment should look like (shared by every image on this page)</figcaption></figure>
-      <div id="modelRows"></div>
-      <div class="row" style="margin-top:14px;justify-content:space-between">
-        <button id="btnPrev" class="ghost">← Previous page</button>
-        <span class="meta">←/→ keys switch pages</span>
-        <button id="btnNext" class="ghost">Next page →</button>
+      <div style="margin:10px 0 2px">
+        <span class="modeltag" id="modelTag"></span>
+        <span class="meta" id="cardMeta"></span>
+      </div>
+      <figure class="mainbox"><img id="mainImg" alt="image being judged"><figcaption>Image being judged — give your verdict on the LAST frame (click to zoom)</figcaption></figure>
+      <figure class="refbox"><img id="refImg" alt="reference"><figcaption>Reference — what the real environment should look like</figcaption></figure>
+      <div class="labels" id="labelBtns"></div>
+      <textarea id="noteBox" rows="2" placeholder="Notes (optional): distortion, hard to see, your reasoning…"></textarea>
+      <div class="row" style="margin-top:10px;justify-content:space-between">
+        <div class="row">
+          <button id="btnPrev" class="ghost">← Previous</button>
+          <button id="btnNext" class="ghost">Next →</button>
+        </div>
+        <span class="kbd">Keys: <b>1</b>–<b>9</b> pick label &amp; advance · <b>←</b>/<b>→</b> previous / next</span>
       </div>
       <p id="saveMsg" class="meta"></p>
     </div>
@@ -111,7 +116,7 @@ a{color:var(--accent)}
 <div id="lightbox" onclick="this.style.display='none'"><img id="lightboxImg" alt="zoom"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=3"></script>
+<script src="config.js?v=4"></script>
 <script>
 const C = window.WMV_CONFIG || {};
 let sb;
@@ -123,18 +128,19 @@ const MODEL_NAME = { lingbot: "LingBot-VA", openwam: "OpenWAM-α" };
 
 const TASK_INFO = {
   t3: { title: "Close the drawer (bowl put away)",
-        desc: "The robot must put the bowl away and close the drawer. Judge the LAST frame of each strip: is the drawer fully closed and the bowl placed? A white gap line along the drawer front means it is NOT fully closed." },
+        desc: "The robot must put the bowl away and close the drawer. Judge the LAST frame: is the drawer fully closed and the bowl placed? A white gap line along the drawer front means it is NOT fully closed." },
   t5: { title: "Place the target object into the goal location",
-        desc: "Judge the LAST frame of each strip: has the target object ended up inside the goal location? Choose “in” if it is inside, “out” if not, “uncertain” if you cannot tell." },
+        desc: "Judge the LAST frame: has the target object ended up inside the goal location? “in” = inside, “out” = not inside, “uncertain” = cannot tell." },
 };
 const PERT_INFO = {
-  "O":    l => `Occlusion level ${l}. A gray occluder patch is pasted onto the ONLY real frame the model sees before it imagines the rest of the episode. O1 → O5 = occluder progressively larger / covering more of the scene. The reference and your judgment target are never occluded.`,
+  "O":    l => `Occlusion level ${l}. A gray occluder patch is pasted onto the ONLY real frame the model sees before it imagines the rest of the episode. O1 → O5 = occluder progressively larger. The reference and the frame you judge are never occluded.`,
   "base": () => "No perturbation. Baseline imagination-quality review: judge whether the imagined rollout itself looks like a successful episode.",
 };
 
-let me = null, cards = [], mine = new Map(), groups = [], gidx = 0, roundId = null;
+let me = null, cards = [], mine = new Map(), groups = [], idx = 0, roundId = null;
 
 function dlink(u){ return (u||"").replace("www.dropbox.com","dl.dropboxusercontent.com").replace(/([?&])dl=0/,"$1").replace(/[?&]$/,""); }
+function gkey(c){ return `${c.task}|${c.family}|${c.level}`; }
 
 async function init(){
   if (!sb) return;
@@ -185,14 +191,20 @@ async function enter(user){
   if (rounds && rounds.length) { roundId = rounds[0].id; await loadRound(); }
 }
 $("roundSel").onchange = async e => { roundId = +e.target.value; await loadRound(); };
-$("groupSel").onchange = e => { gidx = +e.target.value; render(); };
-$("onlyTodo").onchange = () => { gidx = nextTodoGroup(gidx); render(); };
-
-function gkey(c){ return `${c.task}|${c.family}|${c.level}`; }
+$("groupSel").onchange = e => {
+  const g = groups[+e.target.value];
+  // jump to first unlabeled card of that group (or its first card)
+  let j = cards.findIndex(c => gkey(c) === g.key && !mine.has(c.id));
+  if (j < 0) j = cards.findIndex(c => gkey(c) === g.key);
+  if (j >= 0) { idx = j; render(); }
+};
+$("onlyTodo").onchange = () => { if ($("onlyTodo").checked && mine.has(cards[idx]?.id)) idx = nextTodo(idx); render(); };
 
 async function loadRound(){
   const { data: cs } = await sb.from("cards").select("*").eq("round_id", roundId).order("sort_key").order("id");
   cards = cs || [];
+  // order: group (task|family|level), then model, then unit
+  cards.sort((a,b) => gkey(a).localeCompare(gkey(b)) || a.model.localeCompare(b.model) || a.unit_id.localeCompare(b.unit_id));
   const ids = cards.map(c=>c.id);
   mine = new Map();
   for (let i = 0; i < ids.length; i += 400) {
@@ -201,90 +213,79 @@ async function loadRound(){
     (as||[]).forEach(a => mine.set(a.card_id, a));
   }
   const seen = new Map();
-  cards.forEach(c => { const k = gkey(c); if (!seen.has(k)) seen.set(k, []); seen.get(k).push(c); });
-  groups = [...seen.entries()].map(([k, cs]) => ({ key: k, cards: cs }))
-    .sort((a,b) => a.key.localeCompare(b.key));
+  cards.forEach(c => { const k = gkey(c); if (!seen.has(k)) seen.set(k, 0); seen.set(k, seen.get(k)+1); });
+  groups = [...seen.entries()].map(([k,n]) => ({ key: k, n }));
   $("groupSel").innerHTML = groups.map((g,i)=>{
     const [task,fam,lev] = g.key.split("|");
-    return `<option value="${i}">${task} · ${fam==="base" ? "baseline" : fam+"/"+lev} (${g.cards.length})</option>`;
+    return `<option value="${i}">${task} · ${fam==="base" ? "baseline" : fam+"/"+lev} (${g.n})</option>`;
   }).join("");
-  gidx = nextTodoGroup(0); render();
+  idx = nextTodo(0);
+  if (idx < 0 && cards.length) idx = 0;
+  render();
 }
-function groupDone(g){ return g.cards.every(c => mine.has(c.id)); }
-function nextTodoGroup(from){
-  if (!$("onlyTodo").checked) return Math.min(Math.max(from,0), groups.length-1);
-  for (let i = Math.max(from,0); i < groups.length; i++) if (!groupDone(groups[i])) return i;
-  for (let i = 0; i < groups.length; i++) if (!groupDone(groups[i])) return i;
+function nextTodo(from){
+  for (let i = Math.max(from,0); i < cards.length; i++) if (!mine.has(cards[i].id)) return i;
+  for (let i = 0; i < cards.length; i++) if (!mine.has(cards[i].id)) return i;
   return -1;
+}
+function step(dir){
+  if (!cards.length) return;
+  const skip = $("onlyTodo").checked;
+  let i = idx;
+  for (let n = 0; n < cards.length; n++) {
+    i += dir;
+    if (i < 0 || i >= cards.length) return;        // stop at the ends
+    if (!skip || !mine.has(cards[i].id)) { idx = i; render(); return; }
+  }
 }
 function render(){
   const done = cards.filter(c=>mine.has(c.id)).length;
   $("progBar").style.width = cards.length ? (100*done/cards.length)+"%" : "0%";
   $("progTxt").textContent = `${cards.length} cards in this round · you have labeled ${done}`;
-  if (gidx < 0 || !groups.length) { $("groupPanel").hidden = true; $("donePanel").hidden = !groups.length; return; }
-  $("donePanel").hidden = true; $("groupPanel").hidden = false;
-  $("groupSel").value = gidx;
-  const g = groups[gidx];
-  const [task, fam, lev] = g.key.split("|");
-  const ti = TASK_INFO[task] || { title: task, desc: g.cards[0].question };
-  $("groupMeta").textContent = `Page ${gidx+1}/${groups.length} · ${g.cards.length} images on this page`;
+  const allDone = cards.length && done === cards.length && $("onlyTodo").checked;
+  if (!cards.length || idx < 0 || allDone) { $("cardPanel").hidden = true; $("donePanel").hidden = !cards.length ? true : !allDone; return; }
+  $("donePanel").hidden = true; $("cardPanel").hidden = false;
+  const c = cards[idx];
+  const [task, fam, lev] = gkey(c).split("|");
+  const gi = groups.findIndex(g => g.key === gkey(c));
+  if (gi >= 0) $("groupSel").value = gi;
+  const ti = TASK_INFO[task] || { title: task, desc: c.question };
   $("taskDesc").innerHTML = `<b>Task ${task.toUpperCase()}</b> ${ti.title} — ${ti.desc}`;
   const pf = PERT_INFO[fam] || (l => `Perturbation ${fam} ${l||""}`);
   $("pertDesc").innerHTML = `<b>Perturbation</b> ${pf(lev)}`;
-  $("refImg").src = dlink(g.cards[0].ref_url || g.cards[0].img_url);
-
-  const byModel = new Map();
-  g.cards.forEach(c => { if (!byModel.has(c.model)) byModel.set(c.model, []); byModel.get(c.model).push(c); });
-  $("modelRows").innerHTML = "";
-  for (const [model, mcs] of byModel) {
-    const sec = document.createElement("div");
-    sec.className = "modelrow";
-    sec.innerHTML = `<h3>${MODEL_NAME[model] || model} <span class="meta">(${mcs.filter(c=>mine.has(c.id)).length}/${mcs.length} labeled · click an image to zoom)</span></h3>`;
-    const rowEl = document.createElement("div");
-    rowEl.className = "units";
-    for (const c of mcs) {
-      if ($("onlyTodo").checked && mine.has(c.id)) continue;
-      rowEl.appendChild(unitEl(c));
-    }
-    sec.appendChild(rowEl);
-    $("modelRows").appendChild(sec);
-  }
-}
-function unitEl(c){
+  const inG = cards.filter(x => gkey(x) === gkey(c));
+  const pos = inG.findIndex(x => x.id === c.id);
+  $("modelTag").textContent = MODEL_NAME[c.model] || c.model;
+  $("cardMeta").textContent = `item ${pos+1}/${inG.length} in this group · #${idx+1}/${cards.length} overall · ${c.unit_id}`;
+  $("mainImg").src = dlink(c.img_url);
+  $("refImg").src = dlink(c.ref_url || c.img_url);
   const cur = mine.get(c.id);
-  const d = document.createElement("div");
-  d.className = "unit" + (cur ? " done" : "");
   const labels = c.label_set || [];
-  d.innerHTML = `
-    <div class="meta">${c.unit_id}${cur ? " · <span class='ok'>labeled</span>" : ""}</div>
-    <img loading="lazy" src="${dlink(c.img_url)}" alt="${c.unit_id}">
-    <div class="labels">${labels.map(l=>`<button data-l="${l}" class="${cur && cur.label===l ? "sel":""}">${l}</button>`).join("")}</div>
-    <textarea rows="1" placeholder="Notes (optional)">${cur && cur.note || ""}</textarea>`;
-  const ta = d.querySelector("textarea");
-  [...d.querySelectorAll(".labels button")].forEach(b => b.onclick = () => save(c, b.dataset.l, ta.value, d));
-  d.querySelector("img").onclick = () => { $("lightboxImg").src = dlink(c.img_url); $("lightbox").style.display = "flex"; };
-  return d;
+  $("labelBtns").innerHTML = labels.map((l,i)=>
+    `<button data-l="${l}" class="${cur && cur.label===l ? "sel":""}"><b>${i+1}</b> ${l}</button>`).join("");
+  [...$("labelBtns").children].forEach(b => b.onclick = () => save(b.dataset.l));
+  $("noteBox").value = cur && cur.note || "";
+  $("saveMsg").textContent = cur ? "You already labeled this card — you can change it." : "";
 }
-async function save(c, label, note, el){
-  const rec = { card_id: c.id, user_id: me.id, email: me.email, label, note: note || null, updated_at: new Date().toISOString() };
+async function save(label){
+  const c = cards[idx];
+  const rec = { card_id: c.id, user_id: me.id, email: me.email, label, note: $("noteBox").value || null, updated_at: new Date().toISOString() };
   const { error } = await sb.from("annotations").upsert(rec, { onConflict: "card_id,user_id" });
   if (error) { $("saveMsg").textContent = "Save failed: " + error.message; return; }
-  $("saveMsg").textContent = "";
   mine.set(c.id, rec);
-  el.classList.add("done");
-  [...el.querySelectorAll(".labels button")].forEach(b => b.classList.toggle("sel", b.dataset.l === label));
-  const g = groups[gidx];
-  const done = cards.filter(x=>mine.has(x.id)).length;
-  $("progBar").style.width = (100*done/cards.length)+"%";
-  $("progTxt").textContent = `${cards.length} cards in this round · you have labeled ${done}`;
-  if (groupDone(g)) { gidx = nextTodoGroup(gidx); render(); }
+  if ($("onlyTodo").checked) { const j = nextTodo(idx); if (j >= 0) idx = j; }
+  else if (idx < cards.length - 1) idx++;
+  render();
 }
-$("btnPrev").onclick = () => { gidx = Math.max(0, gidx-1); render(); };
-$("btnNext").onclick = () => { gidx = Math.min(groups.length-1, gidx+1); render(); };
+$("btnPrev").onclick = () => step(-1);
+$("btnNext").onclick = () => step(1);
+$("mainImg").onclick = () => { $("lightboxImg").src = $("mainImg").src; $("lightbox").style.display = "flex"; };
+$("refImg").onclick = () => { $("lightboxImg").src = $("refImg").src; $("lightbox").style.display = "flex"; };
 document.addEventListener("keydown", e => {
-  if ($("groupPanel").hidden || e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") return;
-  if (e.key === "ArrowLeft") $("btnPrev").click();
-  else if (e.key === "ArrowRight") $("btnNext").click();
+  if ($("cardPanel").hidden || e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") return;
+  if (e.key === "ArrowLeft") step(-1);
+  else if (e.key === "ArrowRight") step(1);
+  else if (/^[1-9]$/.test(e.key)) { const b = $("labelBtns").children[+e.key-1]; if (b) b.click(); }
 });
 init();
 </script>
