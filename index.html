@@ -131,9 +131,22 @@ const TASK_INFO = {
         desc: "The robot must put the bowl away and close the drawer. Judge the LAST frame: is the drawer fully closed and the bowl placed? A white gap line along the drawer front means it is NOT fully closed." },
   t5: { title: "Place the target object into the goal location",
         desc: "Judge the LAST frame: has the target object ended up inside the goal location? “in” = inside, “out” = not inside, “uncertain” = cannot tell." },
+  t4: { title: "Two mugs onto two plates",
+        desc: "The robot must put the white mug on the LEFT plate and the yellow-and-white mug on the RIGHT plate. The strip shows what the model imagined at each planning step while it was actually executing (closed loop). Judge the LAST (rightmost) frame." },
+  t2: { title: "Stove on, moka pot on stove",
+        desc: "The robot must turn on the stove and put the moka pot on it. Judge the LAST (rightmost) frame of the imagined strip." },
+  t6: { title: "Mug on plate, pudding to its right",
+        desc: "The robot must put the white mug ON the plate and the chocolate pudding to the RIGHT of the plate. The strip shows the model's imagination during closed-loop execution. Judge the LAST (rightmost) frame." },
 };
 const PERT_INFO = {
-  "O":    l => `Occlusion level ${l}. A gray occluder patch is pasted onto the ONLY real frame the model sees before it imagines the rest of the episode. O1 → O5 = occluder progressively larger. The reference and the frame you judge are never occluded.`,
+  "O":    l => `Occlusion ${l}. A gray occluder patch is pasted onto the real frame(s) the model reads. O1 → O5 = progressively larger. The frames you judge are the model's own imagination.`,
+  "E":    l => `Physics change ${l} (Em = object mass scaled, Ef = friction scaled; 1→4 = stronger). The simulator physics differ from what the model expects while it executes.`,
+  "G":    l => `Gravity scaled (${l}; G1→G4 = stronger change). The simulator gravity differs from training while the model executes.`,
+  "K":    l => `External kick ${l} (K1→K9 = stronger/later push). The object is pushed during execution; the model never sees the push directly, only its consequences.`,
+  "N":    l => `Action-stream noise ${l} (N1 = Gaussian noise on actions, NR = random action dropout, NL = constant lag, NLw = wandering lag). The executed actions differ from what the model commanded.`,
+  "B":    l => l === "B0"
+      ? "B0 control: protocol render path, no corruption."
+      : `Image corruption ${l} (Bg = gaussian blur, Bf = fog, Bz = zoom blur; 2/5/9 = severity). Every real frame the model reads is corrupted; its imagined frames are generated from corrupted input.`,
   "base": () => "No perturbation. Baseline imagination-quality review: judge whether the imagined rollout itself looks like a successful episode.",
 };
 
@@ -258,7 +271,9 @@ function render(){
   $("modelTag").textContent = MODEL_NAME[c.model] || c.model;
   $("cardMeta").textContent = `item ${pos+1}/${inG.length} in this group · #${idx+1}/${cards.length} overall · ${c.unit_id}`;
   $("mainImg").src = dlink(c.img_url);
-  $("refImg").src = dlink(c.ref_url || c.img_url);
+  const rb = document.querySelector(".refbox");
+  rb.hidden = !c.ref_url;
+  if (c.ref_url) $("refImg").src = dlink(c.ref_url);
   const cur = mine.get(c.id);
   const labels = c.label_set || [];
   $("labelBtns").innerHTML = labels.map((l,i)=>
