@@ -152,6 +152,10 @@ const PERT_INFO = {
 
 let me = null, cards = [], mine = new Map(), groups = [], idx = 0, roundId = null;
 
+function setImg(el, local, remote){
+  el.onerror = () => { el.onerror = null; if (remote) el.src = dlink(remote); };
+  el.src = local;
+}
 function dlink(u){ return (u||"").replace("www.dropbox.com","dl.dropboxusercontent.com").replace(/([?&])dl=0/,"$1").replace(/[?&]$/,""); }
 function gkey(c){ return `${c.task}|${c.family}|${c.level}`; }
 
@@ -270,10 +274,11 @@ function render(){
   const pos = inG.findIndex(x => x.id === c.id);
   $("modelTag").textContent = MODEL_NAME[c.model] || c.model;
   $("cardMeta").textContent = `item ${pos+1}/${inG.length} in this group · #${idx+1}/${cards.length} overall · ${c.unit_id}`;
-  $("mainImg").src = dlink(c.img_url);
+  // 图片优先从本站仓库读取（cards/r<轮次>/<unit>.png），站内缺失时回退到 Dropbox 直链
+  setImg($("mainImg"), `cards/r${c.round_id}/${c.unit_id}.png`, c.img_url);
   const rb = document.querySelector(".refbox");
   rb.hidden = !c.ref_url;
-  if (c.ref_url) $("refImg").src = dlink(c.ref_url);
+  if (c.ref_url) setImg($("refImg"), `cards/ref/${c.task}.png`, c.ref_url);
   const cur = mine.get(c.id);
   const labels = c.label_set || [];
   $("labelBtns").innerHTML = labels.map((l,i)=>
