@@ -124,7 +124,7 @@ try { sb = supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY); }
 catch (e) { document.getElementById("fatal").textContent = "config.js is missing the Supabase project settings."; }
 
 const $ = (id) => document.getElementById(id);
-const MODEL_NAME = { lingbot: "LingBot-VA", openwam: "OpenWAM-α" };
+const MODEL_NAME = { lingbot: "LingBot-VA", openwam: "OpenWAM-α", cosmos: "Cosmos Policy", uva: "UVA" };
 
 const TASK_INFO = {
   t3: { title: "Close the drawer (bowl put away)",
@@ -140,10 +140,10 @@ const TASK_INFO = {
 };
 const PERT_INFO = {
   "O":    l => `Occlusion ${l}. A gray occluder patch is pasted onto the real frame(s) the model reads. O1 → O5 = progressively larger. The frames you judge are the model's own imagination.`,
-  "E":    l => `Physics change ${l} (Em = object mass scaled, Ef = friction scaled; 1→4 = stronger). The simulator physics differ from what the model expects while it executes.`,
-  "G":    l => `Gravity scaled (${l}; G1→G4 = stronger change). The simulator gravity differs from training while the model executes.`,
-  "K":    l => `External kick ${l} (K1→K9 = stronger/later push). The object is pushed during execution; the model never sees the push directly, only its consequences.`,
-  "N":    l => `Action-stream noise ${l} (N1 = Gaussian noise on actions, NR = random action dropout, NL = constant lag, NLw = wandering lag). The executed actions differ from what the model commanded.`,
+  "E":    l => `Physics change ${l} (Em = target-object mass ×1.5 / 2 / 4 / 8; Ef = contact friction ×0.8 / 0.6 / 0.4 / 0.2; 1→4 = stronger). The simulator physics differ from what the model expects while it executes.`,
+  "G":    l => `Action gain ${l} (G1→G4 = each commanded action scaled by 0.9 / 0.75 / 0.55 / 0.4). The robot moves less than the model commanded.`,
+  "K":    l => `External push ${l} (K1→K9 = push at env step 60 / 160 / 260, each with displacement 2 / 5 / 10 cm). The object is pushed during execution; the model only sees the consequences.`,
+  "N":    l => `Action-stream fault ${l} (N1 = one zero action at env step 50; NR1→NR5 = each step's action replaced by zero with p = 5 / 10 / 20 / 30 / 40 %; NL1→NL5 = commands executed 1–5 env steps late; NLw1→NLw5 = 4 / 8 / 16 / 32 / 64 env steps late). The executed actions differ from what the model commanded.`,
   "B":    l => l === "B0"
       ? "B0 control: protocol render path, no corruption."
       : `Image corruption ${l} (Bg = gaussian blur, Bf = fog, Bz = zoom blur; 2/5/9 = severity). Every real frame the model reads is corrupted; its imagined frames are generated from corrupted input.`,
