@@ -48,7 +48,7 @@ def main():
     man = [m for m in json.load(open(a.manifest)) if m["unit_id"] not in done]
     man.sort(key=lambda m: (m["task"], m["family"], m["level"], m["unit_id"]))
     here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    miss = [m["unit_id"] for m in man if not os.path.exists(f"{here}/cards/r{rid}/{m['unit_id']}.png")]
+    miss = [m["unit_id"] for m in man if not any(os.path.exists(f"{here}/cards/r{rid}/{m['unit_id']}.{x}") for x in ("webp", "png"))]
     print(f"round {a.round_name} id={rid}: {len(have)} cards in db, {len(man)} to add; missing in repo cards/r{rid}: {len(miss)}")
     if a.dry or not man:
         return
