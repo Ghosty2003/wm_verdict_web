@@ -9,6 +9,7 @@ import argparse
 import json
 import os
 import re
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -26,9 +27,12 @@ def req(url, key, method, path, body=None):
                                data=None if body is None else json.dumps(body).encode(),
                                headers={"apikey": key, "Authorization": f"Bearer {key}",
                                         "Content-Type": "application/json", "Prefer": "return=representation"})
-    with urllib.request.urlopen(r, timeout=120) as f:
-        t = f.read()
-        return json.loads(t) if t else None
+    try:
+        with urllib.request.urlopen(r, timeout=120) as f:
+            t = f.read()
+            return json.loads(t) if t else None
+    except urllib.error.HTTPError as e:
+        raise SystemExit(f"HTTP {e.code} on {method} {path.split('?')[0]}: {e.read().decode(errors='replace')[:500]}")
 
 
 def get_all(url, key, path):
@@ -69,7 +73,7 @@ def main():
         print("dry run only (add --yes to insert)"); return
     for rid, (new, start) in plan.items():
         rows = [dict(round_id=rid, model=c["model"], task=c["task"], family=c["family"], level=c["level"], unit_id=c["unit_id"],
-                     img_url=None, ref_url=c.get("ref"), question=c["question"], label_set=c["labels"], sort_key=start + n)
+                     img_url=f"cards/r{rid}/{c['unit_id']}.webp", ref_url=c.get("ref"), question=c["question"], label_set=c["labels"], sort_key=start + n)
                 for n, c in enumerate(new)]
         for i in range(0, len(rows), 200):
             req(url, key, "POST", "cards", rows[i:i + 200])

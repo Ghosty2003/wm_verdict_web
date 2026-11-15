@@ -11,6 +11,7 @@ import argparse
 import json
 import os
 import urllib.parse
+import urllib.error
 import urllib.request
 
 URL = "https://jrkbstpomsyyxfbpshmt.supabase.co"
@@ -21,9 +22,12 @@ def req(key, method, path, body=None):
                                data=None if body is None else json.dumps(body).encode(),
                                headers={"apikey": key, "Authorization": f"Bearer {key}",
                                         "Content-Type": "application/json", "Prefer": "return=representation"})
-    with urllib.request.urlopen(r) as f:
-        t = f.read()
-        return json.loads(t) if t else None
+    try:
+        with urllib.request.urlopen(r, timeout=120) as f:
+            t = f.read()
+            return json.loads(t) if t else None
+    except urllib.error.HTTPError as e:
+        raise SystemExit(f"HTTP {e.code} on {method} {path.split('?')[0]}: {e.read().decode(errors='replace')[:500]}")
 
 
 def main():
@@ -54,7 +58,7 @@ def main():
               f"Rename cards/r{rid} -> cards/r{rnd['id']} (git mv) and rerun with --expect-id {rnd['id']}."); return
     cards.sort(key=lambda c: (c["task"], c["family"], c["level"], c["model"], c["unit_id"]))
     rows = [dict(round_id=rid, model=c["model"], task=c["task"], family=c["family"], level=c["level"], unit_id=c["unit_id"],
-                 img_url=None, ref_url=c.get("ref"), question=c["question"], label_set=c["labels"], sort_key=n)
+                 img_url=f"cards/r{rid}/{c['unit_id']}.webp", ref_url=c.get("ref"), question=c["question"], label_set=c["labels"], sort_key=n)
             for n, c in enumerate(cards)]
     for i in range(0, len(rows), 200):
         req(key, "POST", "cards", rows[i:i + 200])
