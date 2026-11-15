@@ -47,3 +47,12 @@ from annotations a join cards c on c.id = a.card_id
 where c.round_id = <轮次id> order by c.sort_key, a.email;
 ```
 或 Dashboard 直接导 CSV。导出后进 `agent_human_agreement.py` 的流程算一致性。
+
+脚本导出（只读，不带邮箱，乐观率报告用）：`SUPABASE_SERVICE_KEY=... python3 tools/export_round_annotations.py --round-id 3 --out <文件>`。
+
+## 页面流程（2026-11-14 起三轮合并，全站一套流程）
+
+- 一页 = 一个闭环单元（unit_id）。页面从上到下：参考图 → IMAGINED 区（round 3 想象末帧卡，只看想象画面本身作答）→ REAL 区（round 2 闭环真实帧条卡，问题照 round 2 原样）。两区同时可见、各自独立作答。
+- 合页规则：同一 unit_id 在 round 2 和 round 3 都有卡 → 合成一页（两区）；只在 round 3 → 单独成页，只有 IMAGINED 区；只在 round 2 → 照旧，只有 REAL 区；round 1 的卡照旧单独成页。
+- 答案仍按卡片写 `annotations`：IMAGINED 区记在 round 3 的卡上，REAL 区记在 round 2 的卡上；数据库结构和已有标注不变。
+- 没有轮次下拉框；进度与“只看没做完的”按页计算，一页所有区都答完才算完成。键盘：上区 1–4，下区 5–8。

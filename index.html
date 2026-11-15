@@ -8,16 +8,19 @@
 :root{
   --bg:#f6f7f9; --fg:#1c1e21; --card:#ffffff; --line:#e3e5e8; --accent:#2563eb;
   --muted:#6b7280; --ok:#16a34a; --warn:#d97706;
+  --imag:#7c3aed; --imag-bg:#f5f0ff; --real:#0f766e; --real-bg:#effaf8;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#111418; --fg:#e8eaed; --card:#1a1e24; --line:#2a2f37; --accent:#60a5fa;
     --muted:#9aa2ad; --ok:#4ade80; --warn:#fbbf24;
+    --imag:#b49cff; --imag-bg:#221b33; --real:#4fd1c0; --real-bg:#14282a;
   }
 }
 :root[data-theme="dark"]{
   --bg:#111418; --fg:#e8eaed; --card:#1a1e24; --line:#2a2f37; --accent:#60a5fa;
   --muted:#9aa2ad; --ok:#4ade80; --warn:#fbbf24;
+  --imag:#b49cff; --imag-bg:#221b33; --real:#4fd1c0; --real-bg:#14282a;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.6 system-ui,"Noto Sans SC",sans-serif;padding:0 16px}
@@ -31,25 +34,37 @@ select{background:var(--bg);border:1px solid var(--line);border-radius:8px;paddi
 button{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:8px 16px;cursor:pointer}
 button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
 button:disabled{opacity:.45;cursor:default}
+button:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .desc{border-left:3px solid var(--accent);padding:4px 12px;margin:8px 0;font-size:14px}
 .desc b{display:inline-block;min-width:110px}
 .modeltag{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:2px 10px;font-weight:600;margin-right:8px}
-.mainbox{margin:12px 0 4px}
-.mainbox img{width:100%;border:1px solid var(--line);border-radius:8px;background:#000;display:block;cursor:zoom-in}
-.mainbox figcaption,.refbox figcaption{font-size:12px;color:var(--muted);text-align:center;margin-top:4px}
 .refbox{max-width:560px;margin:10px 0}
 .refbox img{width:100%;border:1px solid var(--line);border-radius:8px;background:#000;cursor:zoom-in}
-.labels{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 4px}
-.labels button{background:var(--bg);color:var(--fg);border:1px solid var(--line)}
+figure{margin:0}
+figcaption{font-size:12px;color:var(--muted);text-align:center;margin-top:4px}
+.sec{border:2px solid var(--line);border-radius:12px;padding:14px 16px;margin:16px 0}
+.sec h2{font-size:16px;margin:0 0 6px;letter-spacing:.01em}
+.sec.imag{border-color:var(--imag);background:var(--imag-bg)}
+.sec.imag h2{color:var(--imag)}
+.sec.real{border-color:var(--real);background:var(--real-bg)}
+.sec.real h2{color:var(--real)}
+.sec .warnline{font-size:13px;font-weight:600;margin:0 0 8px}
+.sec img.judged{width:100%;border:1px solid var(--line);border-radius:8px;background:#000;display:block;cursor:zoom-in}
+.sec.imag img.judged{max-width:520px}
+.q{font-weight:600;margin:10px 0 2px}
+.crit{font-size:13px;color:var(--muted);margin:0 0 4px}
+.labels{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 6px}
+.labels button{background:var(--card);color:var(--fg);border:1px solid var(--line)}
 .labels button.sel{background:var(--accent);color:#fff;border-color:var(--accent)}
+.state{font-size:12px;font-weight:600}
+.state.done{color:var(--ok)} .state.todo{color:var(--warn)}
 .meta{font-size:12px;color:var(--muted)}
 .prog{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:8px 0}
 .prog i{display:block;height:100%;background:var(--ok)}
 .kbd{font-size:12px;color:var(--muted)}
 .kbd b{border:1px solid var(--line);border-radius:4px;padding:0 5px;font-weight:600}
 .err{color:#dc2626;font-size:13px;white-space:pre-wrap}
-.ok{color:var(--ok)}
 a{color:var(--accent)}
 #lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:9;cursor:zoom-out}
 #lightbox img{max-width:98vw;max-height:96vh}
@@ -58,7 +73,7 @@ a{color:var(--accent)}
 <body>
 <div class="wrap">
   <h1>WM-Verdict Human Annotation</h1>
-  <div class="sub">One page = one item. Use ←/→ (or the buttons) to move to the previous / next item; the dropdown switches the task × perturbation group. Labels are yours alone and can be changed anytime.</div>
+  <div class="sub">One page = one closed-loop episode (unit). A page can have two parts — the model's IMAGINED last frame and the REAL execution — answer each part on its own. Use ←/→ (or the buttons) to move between pages; the dropdown switches the task × perturbation group. Your labels are yours alone and can be changed anytime.</div>
 
   <div id="login" class="panel" hidden>
     <h3 style="margin-top:0">Sign in</h3>
@@ -79,9 +94,8 @@ a{color:var(--accent)}
       <div class="row" style="justify-content:space-between">
         <div class="row">
           <span id="who" class="meta"></span>
-          <select id="roundSel"></select>
           <select id="groupSel" title="Task × perturbation group"></select>
-          <label class="meta"><input type="checkbox" id="onlyTodo" checked style="width:auto"> Only show cards I haven't labeled</label>
+          <label class="meta"><input type="checkbox" id="onlyTodo" checked style="width:auto"> Only show pages I haven't finished</label>
         </div>
         <button id="btnLogout" class="ghost">Sign out</button>
       </div>
@@ -96,20 +110,18 @@ a{color:var(--accent)}
         <span class="modeltag" id="modelTag"></span>
         <span class="meta" id="cardMeta"></span>
       </div>
-      <figure class="mainbox"><img id="mainImg" alt="image being judged"><figcaption>Image being judged — give your verdict on the LAST frame (click to zoom)</figcaption></figure>
-      <figure class="refbox"><img id="refImg" alt="reference"><figcaption>Reference — what the real environment should look like</figcaption></figure>
-      <div class="labels" id="labelBtns"></div>
-      <textarea id="noteBox" rows="2" placeholder="Notes (optional): distortion, hard to see, your reasoning…"></textarea>
+      <figure class="refbox"><img id="refImg" alt="reference"><figcaption>Reference — what the task looks like when completed in the real environment (click to zoom)</figcaption></figure>
+      <div id="secs"></div>
       <div class="row" style="margin-top:10px;justify-content:space-between">
         <div class="row">
           <button id="btnPrev" class="ghost">← Previous</button>
           <button id="btnNext" class="ghost">Next →</button>
         </div>
-        <span class="kbd">Keys: <b>1</b>–<b>9</b> pick label &amp; advance · <b>←</b>/<b>→</b> previous / next</span>
+        <span class="kbd" id="kbdHint"></span>
       </div>
       <p id="saveMsg" class="meta"></p>
     </div>
-    <div id="donePanel" class="panel" hidden>🎉 You have finished this round. Uncheck "Only show cards I haven't labeled" to review, or wait for the next round.</div>
+    <div id="donePanel" class="panel" hidden>🎉 You have finished every page. Uncheck "Only show pages I haven't finished" to review.</div>
   </div>
   <p id="fatal" class="err"></p>
 </div>
@@ -124,7 +136,11 @@ try { sb = supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY); }
 catch (e) { document.getElementById("fatal").textContent = "config.js is missing the Supabase project settings."; }
 
 const $ = (id) => document.getElementById(id);
-const MODEL_NAME = { lingbot: "LingBot-VA", openwam: "OpenWAM-α", cosmos: "Cosmos Policy", uva: "UVA" };
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+const MODEL_NAME = { lingbot: "LingBot-VA", openwam: "OpenWAM-α", cosmos: "Cosmos Policy", uva: "UVA", vpp2: "VPP2" };
+// 轮次分工（2026-11-14 改版）：round 2 = 闭环真实画面卡（REAL 区），round 3 = 闭环想象末帧卡（IMAGINED 区），
+// 两者按 unit_id 合成一页；其余轮次（round 1）照旧单独成页。答案仍按卡片写入 annotations，因此 IMAGINED 区记在 round 3，REAL 区记在 round 2。
+const ROUND_REAL = 2, ROUND_IMAG = 3;
 
 const TASK_INFO = {
   t3: { title: "Close the drawer (bowl put away)",
@@ -132,13 +148,15 @@ const TASK_INFO = {
   t5: { title: "Place the target object into the goal location",
         desc: "Judge the LAST frame: has the target object ended up inside the goal location? “in” = inside, “out” = not inside, “uncertain” = cannot tell." },
   t4: { title: "Two mugs onto two plates",
-        desc: "The robot must put the white mug on the LEFT plate and the yellow-and-white mug on the RIGHT plate. The strip shows what the model imagined at each planning step while it was actually executing (closed loop). Judge the LAST (rightmost) frame." },
+        desc: "The robot must put the white mug on the LEFT plate and the yellow-and-white mug on the RIGHT plate. Judge the LAST (rightmost) frame." },
   t2: { title: "Stove on, moka pot on stove",
-        desc: "The robot must turn on the stove and put the moka pot on it. Judge the LAST (rightmost) frame of the imagined strip." },
+        desc: "The robot must turn on the stove and put the moka pot on it. Judge the LAST (rightmost) frame." },
   t6: { title: "Mug on plate, pudding to its right",
-        desc: "The robot must put the white mug ON the plate and the chocolate pudding to the RIGHT of the plate. The strip shows the model's imagination during closed-loop execution. Judge the LAST (rightmost) frame." },
+        desc: "The robot must put the white mug ON the plate and the chocolate pudding to the RIGHT of the plate. Judge the LAST (rightmost) frame." },
 };
 const PERT_INFO = {
+  "A":    l => `Initial object displacement ${l} (A0 / A1 = within the training range; A2 → A4 = progressively further outside it).`,
+  "P":    l => `Initial arm pose offset ${l} (P0 → P4 = progressively larger offset of the robot's starting joint configuration).`,
   "O":    l => `Occlusion ${l}. A gray occluder patch is pasted onto the real frame(s) the model reads. O1 → O5 = progressively larger (this changes only the model's input).`,
   "E":    l => `Physics change ${l} (Em = target-object mass ×1.5 / 2 / 4 / 8; Ef = contact friction ×0.8 / 0.6 / 0.4 / 0.2; 1→4 = stronger). The simulator physics differ from what the model expects while it executes.`,
   "G":    l => `Action gain ${l} (G1→G4 = each commanded action scaled by 0.9 / 0.75 / 0.55 / 0.4). The robot moves less than the model commanded.`,
@@ -149,8 +167,13 @@ const PERT_INFO = {
       : `Image corruption ${l} (Bg = gaussian blur, Bf = fog, Bz = zoom blur; 2/5/9 = severity). Every frame the model reads is corrupted (this changes only the model's input).`,
   "base": () => "No perturbation (baseline).",
 };
+const IMAG_TITLE = "IMAGINED (model's last planned frame) — judge the imagination only";
+const IMAG_WARN = "Judge ONLY what this imagined image itself shows. It is the world model's own prediction, not a camera frame. Do not use the REAL execution below — answer as if you had not seen it.";
+const IMAG_Q = "Does the IMAGINED frame show the task completed?";
+const REAL_TITLE = "REAL (actual closed-loop execution)";
 
-let me = null, cards = [], mine = new Map(), groups = [], idx = 0, roundId = null;
+let me = null, pages = [], mine = new Map(), groups = [], idx = 0, nCards = 0;
+const drafts = new Map();                        // card_id -> 未保存的备注草稿（切换区块时不丢）
 
 function setImg(el, local, remote){           // local 可为多个候选（先 .webp 后 .png），全缺时回退 Dropbox
   const c = [].concat(local); if (remote) c.push(dlink(remote));
@@ -159,7 +182,10 @@ function setImg(el, local, remote){           // local 可为多个候选（先 
   el.src = c[0];
 }
 function dlink(u){ return (u||"").replace("www.dropbox.com","dl.dropboxusercontent.com").replace(/([?&])dl=0/,"$1").replace(/[?&]$/,""); }
-function gkey(c){ return `${c.task}|${c.family}|${c.level}`; }
+function gkey(p){ return `${p.task}|${p.family}|${p.level}`; }
+function pageCards(p){ return p.secs.map(s => s.card); }
+function pageDone(p){ return pageCards(p).every(c => mine.has(c.id)); }
+function zoom(src){ $("lightboxImg").src = src; $("lightbox").style.display = "flex"; }
 
 async function init(){
   if (!sb) return;
@@ -205,26 +231,46 @@ async function enter(user){
       return;
     }
   }
-  const { data: rounds } = await sb.from("rounds").select("id,name").order("id", { ascending: false });
-  $("roundSel").innerHTML = (rounds||[]).map(r=>`<option value="${r.id}">${r.name}</option>`).join("");
-  if (rounds && rounds.length) { roundId = rounds[0].id; await loadRound(); }
+  await loadAll();
 }
-$("roundSel").onchange = async e => { roundId = +e.target.value; await loadRound(); };
 $("groupSel").onchange = e => {
   const g = groups[+e.target.value];
-  // jump to first unlabeled card of that group (or its first card)
-  let j = cards.findIndex(c => gkey(c) === g.key && !mine.has(c.id));
-  if (j < 0) j = cards.findIndex(c => gkey(c) === g.key);
+  let j = pages.findIndex(p => gkey(p) === g.key && !pageDone(p));
+  if (j < 0) j = pages.findIndex(p => gkey(p) === g.key);
   if (j >= 0) { idx = j; render(); }
 };
-$("onlyTodo").onchange = () => { if ($("onlyTodo").checked && mine.has(cards[idx]?.id)) idx = nextTodo(idx); render(); };
+$("onlyTodo").onchange = () => { if ($("onlyTodo").checked && pages[idx] && pageDone(pages[idx])) idx = nextTodo(idx); render(); };
 
-async function loadRound(){
-  const { data: cs } = await sb.from("cards").select("*").eq("round_id", roundId).order("sort_key").order("id");
-  cards = cs || [];
-  // order: group (task|family|level), then model, then unit
-  cards.sort((a,b) => gkey(a).localeCompare(gkey(b)) || a.model.localeCompare(b.model) || a.unit_id.localeCompare(b.unit_id));
-  const ids = cards.map(c=>c.id);
+async function fetchAllCards(){
+  const out = [], step = 1000;
+  for (let from = 0; ; from += step) {
+    const { data, error } = await sb.from("cards").select("*").order("round_id").order("id").range(from, from + step - 1);
+    if (error) throw error;
+    out.push(...(data || []));
+    if (!data || data.length < step) return out;
+  }
+}
+
+async function loadAll(){
+  let all;
+  try { all = await fetchAllCards(); }
+  catch (e) { $("fatal").textContent = "Could not load cards: " + (e.message || e); return; }
+  nCards = all.length;
+  // 合页：round 2 + round 3 按 unit_id 合成一页；其余轮次各自成页
+  const byKey = new Map();
+  for (const c of all) {
+    const kind = c.round_id === ROUND_IMAG ? "imag" : c.round_id === ROUND_REAL ? "real" : "other";
+    const key = kind === "other" ? `r${c.round_id}:${c.unit_id}` : c.unit_id;
+    if (!byKey.has(key)) byKey.set(key, { key, unit_id: c.unit_id, model: c.model, task: c.task, family: c.family, level: c.level, secs: [] });
+    const p = byKey.get(key);
+    if (kind === "real") { p.family = c.family; p.level = c.level; }
+    p.secs.push({ kind, card: c });
+  }
+  const ORDER = { imag: 0, real: 1, other: 2 };            // 页面内顺序：想象在上，真实在下
+  pages = [...byKey.values()];
+  pages.forEach(p => p.secs.sort((a, b) => ORDER[a.kind] - ORDER[b.kind]));
+  pages.sort((a,b) => gkey(a).localeCompare(gkey(b)) || a.model.localeCompare(b.model) || a.unit_id.localeCompare(b.unit_id) || a.key.localeCompare(b.key));
+  const ids = all.map(c => c.id);
   mine = new Map();
   for (let i = 0; i < ids.length; i += 400) {
     const { data: as } = await sb.from("annotations").select("card_id,label,note")
@@ -232,83 +278,125 @@ async function loadRound(){
     (as||[]).forEach(a => mine.set(a.card_id, a));
   }
   const seen = new Map();
-  cards.forEach(c => { const k = gkey(c); if (!seen.has(k)) seen.set(k, 0); seen.set(k, seen.get(k)+1); });
+  pages.forEach(p => { const k = gkey(p); seen.set(k, (seen.get(k) || 0) + 1); });
   groups = [...seen.entries()].map(([k,n]) => ({ key: k, n }));
   $("groupSel").innerHTML = groups.map((g,i)=>{
     const [task,fam,lev] = g.key.split("|");
-    return `<option value="${i}">${task} · ${fam==="base" ? "baseline" : fam+"/"+lev} (${g.n})</option>`;
+    return `<option value="${i}">${esc(task)} · ${fam==="base" ? "baseline" : esc(fam+"/"+lev)} (${g.n})</option>`;
   }).join("");
   idx = nextTodo(0);
-  if (idx < 0 && cards.length) idx = 0;
+  if (idx < 0 && pages.length) idx = 0;
   render();
 }
 function nextTodo(from){
-  for (let i = Math.max(from,0); i < cards.length; i++) if (!mine.has(cards[i].id)) return i;
-  for (let i = 0; i < cards.length; i++) if (!mine.has(cards[i].id)) return i;
+  for (let i = Math.max(from,0); i < pages.length; i++) if (!pageDone(pages[i])) return i;
+  for (let i = 0; i < pages.length; i++) if (!pageDone(pages[i])) return i;
   return -1;
 }
 function step(dir){
-  if (!cards.length) return;
+  if (!pages.length) return;
   const skip = $("onlyTodo").checked;
   let i = idx;
-  for (let n = 0; n < cards.length; n++) {
+  for (let n = 0; n < pages.length; n++) {
     i += dir;
-    if (i < 0 || i >= cards.length) return;        // stop at the ends
-    if (!skip || !mine.has(cards[i].id)) { idx = i; render(); return; }
+    if (i < 0 || i >= pages.length) return;        // stop at the ends
+    if (!skip || !pageDone(pages[i])) { idx = i; render(); return; }
   }
 }
-function render(){
-  const done = cards.filter(c=>mine.has(c.id)).length;
-  $("progBar").style.width = cards.length ? (100*done/cards.length)+"%" : "0%";
-  $("progTxt").textContent = `${cards.length} cards in this round · you have labeled ${done}`;
-  const allDone = cards.length && done === cards.length && $("onlyTodo").checked;
-  if (!cards.length || idx < 0 || allDone) { $("cardPanel").hidden = true; $("donePanel").hidden = !cards.length ? true : !allDone; return; }
-  $("donePanel").hidden = true; $("cardPanel").hidden = false;
-  const c = cards[idx];
-  const [task, fam, lev] = gkey(c).split("|");
-  const gi = groups.findIndex(g => g.key === gkey(c));
-  if (gi >= 0) $("groupSel").value = gi;
-  const ti = TASK_INFO[task] || { title: task, desc: c.question };
-  const how = (c.question && c.question.includes("REAL camera")) ? c.question : ti.desc;   // 真实画面轮次用卡片自带说明
-  $("taskDesc").innerHTML = `<b>Task ${task.toUpperCase()}</b> ${ti.title} — ${how}`;
-  const pf = PERT_INFO[fam] || (l => `Perturbation ${fam} ${l||""}`);
-  $("pertDesc").innerHTML = `<b>Perturbation</b> ${pf(lev)}`;
-  const inG = cards.filter(x => gkey(x) === gkey(c));
-  const pos = inG.findIndex(x => x.id === c.id);
-  $("modelTag").textContent = MODEL_NAME[c.model] || c.model;
-  $("cardMeta").textContent = `item ${pos+1}/${inG.length} in this group · #${idx+1}/${cards.length} overall · ${c.unit_id}`;
-  // 图片优先从本站仓库读取（cards/r<轮次>/<unit>.webp，其次 .png），站内缺失时回退到 Dropbox 直链
-  setImg($("mainImg"), [`cards/r${c.round_id}/${c.unit_id}.webp`, `cards/r${c.round_id}/${c.unit_id}.png`], c.img_url);
-  const rb = document.querySelector(".refbox");
-  rb.hidden = !c.ref_url;
-  if (c.ref_url) setImg($("refImg"), `cards/ref/${c.task}.png`, c.ref_url);
-  const cur = mine.get(c.id);
-  const labels = c.label_set || [];
-  $("labelBtns").innerHTML = labels.map((l,i)=>
-    `<button data-l="${l}" class="${cur && cur.label===l ? "sel":""}"><b>${i+1}</b> ${l}</button>`).join("");
-  [...$("labelBtns").children].forEach(b => b.onclick = () => save(b.dataset.l));
-  $("noteBox").value = cur && cur.note || "";
-  $("saveMsg").textContent = cur ? "You already labeled this card — you can change it." : "";
+function critOf(q){                              // r3 卡片问题里 "COMPLETED — " 之后是该任务的完成条件
+  const m = /COMPLETED\s+—\s+(.+)$/.exec(q || "");
+  return m ? m[1] : "";
 }
-async function save(label){
-  const c = cards[idx];
-  const rec = { card_id: c.id, user_id: me.id, email: me.email, label, note: $("noteBox").value || null, updated_at: new Date().toISOString() };
+function secHTML(s, si){
+  const c = s.card, cur = mine.get(c.id), labels = c.label_set || [];
+  const base = si * 4;                             // 第 1 区按 1–4，第 2 区按 5–8
+  const btns = labels.map((l,i) => `<button data-card="${c.id}" data-l="${esc(l)}" class="${cur && cur.label===l ? "sel":""}"><b>${base+i+1}</b> ${esc(l)}</button>`).join("");
+  const state = `<span class="state ${cur ? "done" : "todo"}">${cur ? "answered: " + esc(cur.label) : "not answered yet"}</span>`;
+  const note = `<textarea data-note="${c.id}" rows="2" placeholder="Notes for this part (optional)">${esc(drafts.has(c.id) ? drafts.get(c.id) : (cur && cur.note) || "")}</textarea>`;
+  const img = `<img class="judged" data-img="${c.id}" alt="${s.kind === "imag" ? "imagined last frame" : "frame strip being judged"}">`;
+  if (s.kind === "imag") {
+    const crit = critOf(c.question);
+    return `<section class="sec imag"><h2>${esc(IMAG_TITLE)}</h2><p class="warnline">${esc(IMAG_WARN)}</p>
+      <figure>${img}<figcaption>Imagined last frame (click to zoom)</figcaption></figure>
+      <p class="q">${esc(IMAG_Q)}</p>${crit ? `<p class="crit">Task completed means: ${esc(crit)}</p>` : ""}
+      <div class="labels">${btns}</div>${note} ${state}</section>`;
+  }
+  if (s.kind === "real") {
+    return `<section class="sec real"><h2>${esc(REAL_TITLE)}</h2>
+      <figure>${img}<figcaption>Real camera frames of the closed-loop episode — judge the boxed (last) frame (click to zoom)</figcaption></figure>
+      <p class="q">${esc(c.question)}</p>
+      <div class="labels">${btns}</div>${note} ${state}</section>`;
+  }
+  const ti = TASK_INFO[c.task] || { desc: c.question };
+  return `<section class="sec"><h2>Round ${esc(c.round_id)} item</h2>
+    <figure>${img}<figcaption>Image being judged — give your verdict on the LAST frame (click to zoom)</figcaption></figure>
+    <p class="q">${esc(ti.desc)}</p>
+    <div class="labels">${btns}</div>${note} ${state}</section>`;
+}
+function render(){
+  const done = pages.filter(pageDone).length;
+  const answered = pages.reduce((n, p) => n + pageCards(p).filter(c => mine.has(c.id)).length, 0);
+  $("progBar").style.width = pages.length ? (100*done/pages.length)+"%" : "0%";
+  $("progTxt").textContent = `${pages.length} pages (${nCards} questions) · you have finished ${done} pages · ${answered} questions answered`;
+  const allDone = pages.length && done === pages.length && $("onlyTodo").checked;
+  if (!pages.length || idx < 0 || allDone) { $("cardPanel").hidden = true; $("donePanel").hidden = !pages.length ? true : !allDone; return; }
+  $("donePanel").hidden = true; $("cardPanel").hidden = false;
+  const p = pages[idx];
+  const [task, fam, lev] = gkey(p).split("|");
+  const gi = groups.findIndex(g => g.key === gkey(p));
+  if (gi >= 0) $("groupSel").value = gi;
+  const ti = TASK_INFO[task] || { title: task };
+  $("taskDesc").innerHTML = `<b>Task ${esc(task.toUpperCase())}</b> ${esc(ti.title)}`;
+  const pf = PERT_INFO[fam] || (l => `Perturbation ${fam} ${l||""}`);
+  $("pertDesc").innerHTML = `<b>Perturbation</b> ${esc(pf(lev))}`;
+  const inG = pages.filter(x => gkey(x) === gkey(p));
+  const pos = inG.findIndex(x => x.key === p.key);
+  $("modelTag").textContent = MODEL_NAME[p.model] || p.model;
+  $("cardMeta").textContent = `page ${pos+1}/${inG.length} in this group · #${idx+1}/${pages.length} overall · ${p.unit_id}`;
+  const refCard = p.secs.map(s => s.card).find(c => c.ref_url);
+  const rb = document.querySelector(".refbox");
+  rb.hidden = !refCard;
+  if (refCard) setImg($("refImg"), `cards/ref/${refCard.task}.png`, refCard.ref_url);
+  $("secs").innerHTML = p.secs.map(secHTML).join("");
+  // 图片优先从本站仓库读取（cards/r<轮次>/<unit>.webp，其次 .png），站内缺失时回退到 Dropbox 直链
+  p.secs.forEach(s => {
+    const c = s.card, el = document.querySelector(`img[data-img="${c.id}"]`);
+    setImg(el, [`cards/r${c.round_id}/${c.unit_id}.webp`, `cards/r${c.round_id}/${c.unit_id}.png`], c.img_url);
+    el.onclick = () => zoom(el.src);
+  });
+  document.querySelectorAll("#secs .labels button").forEach(b => b.onclick = () => save(+b.dataset.card, b.dataset.l));
+  document.querySelectorAll("#secs textarea[data-note]").forEach(t => t.oninput = () => drafts.set(+t.dataset.note, t.value));
+  $("kbdHint").innerHTML = p.secs.length > 1
+    ? "Keys: <b>1</b>–<b>4</b> top part · <b>5</b>–<b>8</b> bottom part · <b>←</b>/<b>→</b> previous / next page"
+    : "Keys: <b>1</b>–<b>4</b> pick label · <b>←</b>/<b>→</b> previous / next page";
+  const n = pageCards(p).filter(c => mine.has(c.id)).length;
+  $("saveMsg").textContent = n ? `${n} of ${p.secs.length} part(s) on this page answered — you can change any answer.` : "";
+}
+async function save(cardId, label){
+  const p = pages[idx];
+  const t = document.querySelector(`textarea[data-note="${cardId}"]`);
+  const rec = { card_id: cardId, user_id: me.id, email: me.email, label, note: (t && t.value) || null, updated_at: new Date().toISOString() };
   const { error } = await sb.from("annotations").upsert(rec, { onConflict: "card_id,user_id" });
   if (error) { $("saveMsg").textContent = "Save failed: " + error.message; return; }
-  mine.set(c.id, rec);
-  if ($("onlyTodo").checked) { const j = nextTodo(idx); if (j >= 0) idx = j; }
-  else if (idx < cards.length - 1) idx++;
+  mine.set(cardId, rec); drafts.delete(cardId);
+  if (pageDone(p)) {                               // 一页所有区都答完才翻页
+    if ($("onlyTodo").checked) { const j = nextTodo(idx); if (j >= 0) idx = j; }
+    else if (idx < pages.length - 1) idx++;
+  }
   render();
 }
 $("btnPrev").onclick = () => step(-1);
 $("btnNext").onclick = () => step(1);
-$("mainImg").onclick = () => { $("lightboxImg").src = $("mainImg").src; $("lightbox").style.display = "flex"; };
-$("refImg").onclick = () => { $("lightboxImg").src = $("refImg").src; $("lightbox").style.display = "flex"; };
+$("refImg").onclick = () => zoom($("refImg").src);
 document.addEventListener("keydown", e => {
   if ($("cardPanel").hidden || e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") return;
   if (e.key === "ArrowLeft") step(-1);
   else if (e.key === "ArrowRight") step(1);
-  else if (/^[1-9]$/.test(e.key)) { const b = $("labelBtns").children[+e.key-1]; if (b) b.click(); }
+  else if (/^[1-8]$/.test(e.key)) {
+    const k = +e.key - 1, sec = document.querySelectorAll("#secs .sec")[Math.floor(k / 4)];
+    const b = sec && sec.querySelectorAll(".labels button")[k % 4];
+    if (b) b.click();
+  }
 });
 init();
 </script>
