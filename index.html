@@ -46,7 +46,8 @@ figcaption{font-size:12px;color:var(--muted);margin-top:4px}
 .mrow{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:14px 0;background:var(--card)}
 .mrow > h2{font-size:16px;margin:0 0 8px}
 .mrow > h2 .tag{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:1px 10px}
-.parts{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,1.25fr);gap:12px}
+.mrow > h2 .proxy{font-size:13px;font-weight:600;color:var(--warn);margin-left:8px}
+.parts{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:12px;align-items:start}
 @media (max-width:900px){ .parts{grid-template-columns:1fr} }
 .part{border:2px solid var(--line);border-radius:10px;padding:10px 12px}
 .part h3{font-size:13px;margin:0 0 6px;letter-spacing:.02em}
@@ -54,9 +55,10 @@ figcaption{font-size:12px;color:var(--muted);margin-top:4px}
 .part.imag{border-color:var(--imag);background:var(--imag-bg)} .part.imag h3{color:var(--imag)}
 .part.none{border-style:dashed;background:var(--none-bg);color:var(--muted)}
 .part.active{box-shadow:0 0 0 3px var(--warn)}
-.part img.judged{width:100%;border:1px solid var(--line);border-radius:6px;background:#000;display:block;cursor:zoom-in}
-.part.imag img.judged{max-width:300px}
-.q{font-weight:600;margin:8px 0 2px}
+.part img.judged,.part canvas.judged{width:100%;border-radius:6px;display:block;cursor:zoom-in}
+.part img.judged{border:1px solid var(--line);background:#000}
+.part.imag img.judged{max-width:340px;margin:0 auto}
+.q{font-weight:600;margin:8px 0 4px;font-size:14px}
 .crit{font-size:12px;color:var(--muted);margin:0 0 2px}
 .warnline{font-size:12px;font-weight:600;margin:0 0 6px}
 .labels{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 4px}
@@ -70,7 +72,8 @@ figcaption{font-size:12px;color:var(--muted);margin-top:4px}
 .kbd{font-size:12px;color:var(--muted)}
 .kbd b{border:1px solid var(--line);border-radius:4px;padding:0 5px;font-weight:600}
 .err{color:#dc2626;font-size:13px;white-space:pre-wrap}
-textarea{font-size:13px}
+textarea{font-size:13px;padding:4px 8px;margin-top:4px}
+.part.none{font-size:13px}
 a{color:var(--accent)}
 #lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:9;cursor:zoom-out}
 #lightbox img{max-width:98vw;max-height:96vh}
@@ -79,7 +82,7 @@ a{color:var(--accent)}
 <body>
 <div class="wrap">
   <h1>WM-Verdict Human Annotation</h1>
-  <div class="sub">Each page is one test case: the same task, the same initial condition and the same perturbation, executed separately by each of the four models (one row per model). For every row, judge the REAL execution and, where available, the model's IMAGINED last frame — each on its own. Pick the condition in the first dropdown and the seed (1–5) in the second; ←/→ moves between seeds and continues to the next condition at the end. Your labels are yours alone and can be changed anytime.</div>
+  <div class="sub">One page = one test case, run by four models. Judge each REAL execution and each IMAGINED last frame on its own.</div>
 
   <div id="login" class="panel" hidden>
     <h3 style="margin-top:0">Sign in</h3>
@@ -113,15 +116,15 @@ a{color:var(--accent)}
       <div class="desc" id="taskDesc"></div>
       <div class="desc" id="pertDesc"></div>
       <div class="desc" id="caseDesc"></div>
-      <p class="same">Same initial condition and same perturbation — each of the four models executed it on its own.</p>
-      <figure class="refbox"><img id="refImg" alt="reference"><figcaption>Reference — what the task looks like when completed in the real environment (click to zoom)</figcaption></figure>
+      <p class="same" id="sameNote">Same initial condition and same perturbation — each of the four models executed it on its own.</p>
+      <figure class="refbox"><img id="refImg" alt="reference"><figcaption>Reference: task completed</figcaption></figure>
       <div id="rows"></div>
       <div class="row" style="margin-top:10px;justify-content:space-between">
         <div class="row">
           <button id="btnPrev" class="ghost">← Previous</button>
           <button id="btnNext" class="ghost">Next →</button>
         </div>
-        <span class="kbd">Keys: <b>1</b>–<b>4</b> answer the highlighted question · <b>←</b>/<b>→</b> previous / next seed</span>
+        <span class="kbd"><b>1</b>–<b>4</b> answer highlighted · <b>←</b>/<b>→</b> seed</span>
       </div>
       <p id="saveMsg" class="meta"></p>
     </div>
@@ -144,7 +147,7 @@ const MODEL_NAME = { lingbot: "LingBot-VA", openwam: "OpenWAM-α", cosmos: "Cosm
 // 入库照旧（2026-11-15 同卷改版）：REAL 区 = round 2 的卡，IMAGINED 区 = round 3 的卡，按 unit_id 对应；
 // 页面结构（哪一页放哪几张卡）由 data/samecase_pages.json 给出，数据库结构不变。
 const ROUND_REAL = 2, ROUND_IMAG = 3;
-const PAGES_URL = "data/samecase_pages.json?v=1";
+const PAGES_URL = "data/samecase_pages.json?v=2";
 
 const TASK_INFO = {
   t5: { title: "Put the book into the BACK compartment of the caddy", crit: "the book is inside the BACK compartment of the caddy" },
@@ -174,8 +177,8 @@ function pertText(lv){
   if (B) return `Image corruption ${lv}: ${B}, severity ${n} (of 2 / 5 / 9). Every frame the model reads is corrupted; only the model's input changes.`;
   return `Perturbation ${lv}.`;
 }
-const REAL_Q = "Did the REAL execution complete the task? (judge the boxed, rightmost frame)";
-const IMAG_Q = "Does the IMAGINED last frame show the task completed?";
+const REAL_Q = "Did the real execution complete the task? (judge the boxed final frame)";
+const IMAG_Q = "Does the imagined frame show the task completed?";
 const IMAG_WARN = "The world model's own prediction at its last planning call — not a camera frame. Judge this image on its own.";
 
 let me = null, P = null, pages = [], cells = [], cardOf = new Map(), mine = new Map(), idx = 0, nQ = 0;
@@ -185,6 +188,22 @@ function setImg(el, local){
   const c = [].concat(local); let i = 0;
   el.onerror = () => { if (++i < c.length) el.src = c[i]; else el.onerror = null; };
   el.src = c[0];
+}
+// REAL 帧条（13 帧横排、最后一帧前留 6px 白、黄框）→ 每行 4 格的网格，在浏览器里切开重排，不改图片文件
+function toGrid(img){
+  const N = 13, GAP = 6, W = img.naturalWidth, H = img.naturalHeight, fw = Math.round((W - GAP) / N);
+  if (!W || Math.abs(fw - H) > H * 0.6) return;             // 不是标准帧条就原样显示
+  const cols = 4, rows = Math.ceil(N / cols), pad = 6;
+  const c = document.createElement("canvas");
+  c.width = cols * fw + (cols - 1) * pad; c.height = rows * H + (rows - 1) * pad;
+  const g = c.getContext("2d");
+  for (let i = 0; i < N; i++) {
+    const sx = i * fw + (i === N - 1 ? GAP : 0);
+    g.drawImage(img, sx, 0, i === N - 1 ? W - sx : fw, H, (i % cols) * (fw + pad), Math.floor(i / cols) * (H + pad), i === N - 1 ? W - sx : fw, H);
+  }
+  c.className = "judged"; c.title = "frames 1–13 in time order; the boxed one is the final frame";
+  c.onclick = () => zoom(c.toDataURL());
+  img.replaceWith(c);
 }
 function zoom(src){ $("lightboxImg").src = src; $("lightbox").style.display = "flex"; }
 function qsOf(p){ const out = []; p.rows.forEach(r => { if (r.realCard) out.push(r.realCard); if (r.imagCard) out.push(r.imagCard); }); return out; }
@@ -284,20 +303,18 @@ function step(dir){ const j = idx + dir; if (j >= 0 && j < pages.length) { idx =
 
 function partHTML(kind, r, card){
   if (!card) {
-    const why = !r[kind] ? (r.in_cell ? "No data for this seed" : "No data — this model was not run under this condition") : "Card not in the database yet";
-    return `<div class="part none"><h3>${kind === "real" ? "REAL" : "IMAGINED"}</h3>${esc(why)} — nothing to answer here.</div>`;
+    const why = !r[kind] ? (r.in_cell ? "No data" : "Not run under this condition") : "Not in the database yet";
+    return `<div class="part none"><h3>${kind === "real" ? "REAL" : "IMAGINED"}</h3>${esc(why)}</div>`;
   }
   const cur = mine.get(card.id);
   const btns = (card.label_set || []).map((l, i) => `<button data-card="${card.id}" data-l="${esc(l)}" class="${cur && cur.label === l ? "sel" : ""}"><b>${i + 1}</b> ${esc(l)}</button>`).join("");
-  const state = `<span class="state ${cur ? "done" : "todo"}">${cur ? "answered: " + esc(cur.label) : "not answered yet"}</span>`;
   const note = `<textarea data-note="${card.id}" rows="1" placeholder="Note (optional)">${esc(drafts.has(card.id) ? drafts.get(card.id) : (cur && cur.note) || "")}</textarea>`;
   const img = `<img class="judged" data-img="${card.id}" data-round="${card.round_id}" data-uid="${esc(card.unit_id)}" alt="${kind === "real" ? "real frame strip" : "imagined last frame"}">`;
-  const crit = (TASK_INFO[card.task] || {}).crit;
   if (kind === "real")
-    return `<div class="part real" data-q="${card.id}"><h3>REAL — actual closed-loop execution</h3><figure>${img}<figcaption>13 evenly spaced real camera frames, start → final frame (boxed). Click to zoom.</figcaption></figure>
-      <p class="q">${esc(REAL_Q)}</p>${crit ? `<p class="crit">Completed means: ${esc(crit)}</p>` : ""}<div class="labels">${btns}</div>${note} ${state}</div>`;
-  return `<div class="part imag" data-q="${card.id}"><h3>IMAGINED — model's last planned frame</h3><p class="warnline">${esc(IMAG_WARN)}</p><figure>${img}<figcaption>Click to zoom.</figcaption></figure>
-    <p class="q">${esc(IMAG_Q)}</p><div class="labels">${btns}</div>${note} ${state}</div>`;
+    return `<div class="part real" data-q="${card.id}"><h3>REAL</h3>${img}
+      <p class="q">${esc(REAL_Q)}</p><div class="labels">${btns}</div>${note}</div>`;
+  return `<div class="part imag" data-q="${card.id}"><h3>IMAGINED</h3>${img}
+    <p class="q">${esc(IMAG_Q)}</p><div class="labels">${btns}</div>${note}</div>`;
 }
 function activeCard(p){ for (const c of qsOf(p)) if (!mine.has(c.id)) return c.id; return null; }
 
@@ -312,22 +329,28 @@ function render(){
   $("seedSel").innerHTML = cell.idx.map((j, k) => `<option value="${k}">Seed ${k + 1} / ${cell.idx.length}${pageDone(pages[j]) ? " ✓" : ""}</option>`).join("");
   $("seedSel").value = cell.idx.indexOf(idx);
   const ti = TASK_INFO[p.task] || { title: p.task };
-  $("taskDesc").innerHTML = `<b>Task ${esc(p.T)} (${esc(p.task)})</b> ${esc(ti.title)}`;
+  $("taskDesc").innerHTML = `<b>Task ${esc(p.T)}</b> ${esc(ti.title)}${ti.crit ? ` — completed = ${esc(ti.crit)}` : ""}`;
   $("pertDesc").innerHTML = `<b>Perturbation</b> ${esc(pertText(p.level))}`;
-  $("caseDesc").innerHTML = `<b>Test case</b> anchor (initial condition) <b style="min-width:0">${esc(p.anchor)}</b> · seed #${esc(p.k)}${p.seed_value != null ? ` (policy seed ${esc(p.seed_value)})` : ""} · seed ${p.seed_no} of ${cell.idx.length} for this condition`;
+  $("caseDesc").innerHTML = `<b>Test case</b> anchor ${esc(p.anchor)} · seed ${esc(p.k)}${p.seed_value != null ? ` (${esc(p.seed_value)})` : ""}`;
   setImg($("refImg"), `cards/ref/${p.task}.png`);
   const act = activeCard(p);
-  $("rows").innerHTML = p.rows.map(r => `<section class="mrow"><h2><span class="tag">${esc(MODEL_NAME[r.model] || r.model)}</span></h2>
+  const anyProxy = p.rows.some(r => r.proxy && (r.realCard || r.imagCard));
+  $("sameNote").textContent = anyProxy
+    ? "Same task and perturbation. ⚠ rows: that model's own initial condition and seed."
+    : "Same initial condition and perturbation for all four models.";
+  $("rows").innerHTML = p.rows.map(r => `<section class="mrow"><h2><span class="tag">${esc(MODEL_NAME[r.model] || r.model)}</span>${r.proxy && (r.realCard || r.imagCard)
+      ? ` <span class="proxy">⚠ different initial condition / seed (${esc(r.proxy.note)})</span>` : ""}</h2>
     <div class="parts">${partHTML("real", r, r.realCard)}${partHTML("imag", r, r.imagCard)}</div></section>`).join("");
   if (act) { const el = document.querySelector(`.part[data-q="${act}"]`); if (el) el.classList.add("active"); }
   document.querySelectorAll("#rows img.judged").forEach(el => {
     const d = `cards/r${el.dataset.round}/${el.dataset.uid}`;
     setImg(el, [d + ".webp", d + ".png"]); el.onclick = () => zoom(el.src);
+    if (el.dataset.round === String(ROUND_REAL)) el.onload = () => toGrid(el);
   });
   document.querySelectorAll("#rows .labels button").forEach(b => b.onclick = () => save(+b.dataset.card, b.dataset.l));
   document.querySelectorAll("#rows textarea[data-note]").forEach(t => t.oninput = () => drafts.set(+t.dataset.note, t.value));
   const qs = qsOf(p), n = qs.filter(c => mine.has(c.id)).length;
-  $("saveMsg").textContent = qs.length ? `${n} of ${qs.length} question(s) on this page answered — you can change any answer.` : "No questions on this page.";
+  $("saveMsg").textContent = qs.length ? `${n} / ${qs.length} answered on this page` : "";
 }
 async function save(cardId, label){
   const t = document.querySelector(`textarea[data-note="${cardId}"]`);
