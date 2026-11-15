@@ -50,9 +50,13 @@ where c.round_id = <轮次id> order by c.sort_key, a.email;
 
 脚本导出（只读，不带邮箱，乐观率报告用）：`SUPABASE_SERVICE_KEY=... python3 tools/export_round_annotations.py --round-id 3 --out <文件>`。
 
-## 页面流程（2026-11-14 起三轮合并，全站一套流程）
+## 页面流程（2026-11-15 起：同卷对比，每档 5 个 seed）
 
-- 一页 = 一个闭环单元（unit_id）。页面从上到下：参考图 → IMAGINED 区（round 3 想象末帧卡，只看想象画面本身作答）→ REAL 区（round 2 闭环真实帧条卡，问题照 round 2 原样）。两区同时可见、各自独立作答。
-- 合页规则：同一 unit_id 在 round 2 和 round 3 都有卡 → 合成一页（两区）；只在 round 3 → 单独成页，只有 IMAGINED 区；只在 round 2 → 照旧，只有 REAL 区；round 1 的卡照旧单独成页。
-- 答案仍按卡片写 `annotations`：IMAGINED 区记在 round 3 的卡上，REAL 区记在 round 2 的卡上；数据库结构和已有标注不变。
-- 没有轮次下拉框；进度与“只看没做完的”按页计算，一页所有区都答完才算完成。键盘：上区 1–4，下区 5–8。
+- 一页 = 一个测试用例：同一任务、同一初始条件（anchor）、同一扰动档、同一策略种子，四个模型（LingBot-VA / OpenWAM-α / Cosmos Policy / UVA）各自执行，一个模型一行。
+- 每行两区：REAL（闭环真实帧条，round 2 的卡）+ IMAGINED（想象末帧，round 3 的卡），按 unit_id 对应；没有数据的区标“无”、不出问题。
+- 页面表在 `data/samecase_pages.json`（哪页放哪几张卡），由 `wm_verdict/libero/out/annotation/samecase_20261115/` 的脚本生成：
+  inventory.py（四模型逐单元盘点）→ select_pages.py（每个 任务×档位 统一抽 5 个 (anchor, seed)，固定种子）→ samecase_replay.py（按存档动作回放补真实帧）→ build_cards.py（出图 + 页面表 + 入库清单）→ check_pages.py（抽 10 页核对）。
+- 导航：第一个下拉选 任务×档位，第二个选 seed 1–5；←/→ 在 seed 间翻，翻到头接下一个档。进度条按问题数计。键盘 1–4 回答当前高亮（第一个未答）的问题。
+- 新卡入库：`SUPABASE_SERVICE_KEY=... python3 tools/add_samecase_cards.py --manifest <manifest_samecase.json> [--yes]`，插入已有的 round 2 / round 3，库里已有的 unit_id 跳过（旧卡与旧标注不动）。
+- 导出：`SUPABASE_SERVICE_KEY=... python3 tools/export_samecase.py --out <文件> [--cutoff <上线时刻>]`，同卷页标注与旧标注分两张表。
+- 改版前的页面存档：`wm_verdict/libero/out/annotation/samecase_20261115/index_before_samecase_20261115.html`。
