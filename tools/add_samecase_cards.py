@@ -60,7 +60,7 @@ def main():
             print(f"STOP: round {rid} is {rounds.get(rid)!r}, expected name starting with {pre!r}; nothing written"); return
     plan = {}
     for rid in (2, 3):
-        have = get_all(url, key, f"cards?select=unit_id,sort_key&round_id=eq.{rid}")
+        have = get_all(url, key, f"cards?select=unit_id,sort_key&round_id=eq.{rid}&order=id")
         done = {c["unit_id"] for c in have}
         new = [c for c in cards if c["round_id"] == rid and c["unit_id"] not in done]
         miss = [c["unit_id"] for c in new if not any(os.path.exists(f"{HERE}/cards/r{rid}/{c['unit_id']}.{x}") for x in ("webp", "png"))]
