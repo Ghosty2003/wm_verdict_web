@@ -50,13 +50,14 @@ where c.round_id = <轮次id> order by c.sort_key, a.email;
 
 脚本导出（只读，不带邮箱，乐观率报告用）：`SUPABASE_SERVICE_KEY=... python3 tools/export_round_annotations.py --round-id 3 --out <文件>`。
 
-## 页面流程（2026-11-15 起：同卷对比，每档 5 个 seed）
+## 页面流程（2026-11-16 起 v4：每档 5 组，不再按 seed 对齐）
 
-- 一页 = 一个测试用例：同一任务、同一初始条件（anchor）、同一扰动档、同一策略种子，四个模型（LingBot-VA / OpenWAM-α / Cosmos Policy / UVA）各自执行，一个模型一行。
-- 每行两区：REAL（闭环真实帧条，round 2 的卡）+ IMAGINED（想象末帧，round 3 的卡），按 unit_id 对应；没有数据的区标“无”、不出问题。
+- 一页 = 一个 任务×扰动档 的第 g 组（g = 1–5）：同一任务、同一扰动档，四个模型（LingBot-VA / OpenWAM-α / Cosmos Policy / UVA）各放一次自己的闭环运行，一个模型一行。各模型的初始条件 / 种子不要求相同，页面上也不显示 seed。
+- 每行两区：REAL（闭环真实帧条，round 2 的卡）+ IMAGINED（想象末帧，round 3 的卡），按 unit_id 对应；想象帧只在与真实画面来自同一次运行时才放，否则标“无”、不出问题。
+- 挑单元：每模型优先“齐全”的单元（真实画面 + 同一次运行的想象帧），v3 页上齐全的旧单元留在原组位置；凑不齐 5 个才用只有真实画面的补。规则见 select_pages.py 文件头。
 - 页面表在 `data/samecase_pages.json`（哪页放哪几张卡），由 `wm_verdict/libero/out/annotation/samecase_20261115/` 的脚本生成：
-  inventory.py（四模型逐单元盘点）→ select_pages.py（每个 任务×档位 统一抽 5 个 (anchor, seed)，固定种子）→ samecase_replay.py（按存档动作回放补真实帧）→ build_cards.py（出图 + 页面表 + 入库清单）→ check_pages.py（抽 10 页核对）。
-- 导航：第一个下拉选 任务×档位，第二个选 seed 1–5；←/→ 在 seed 间翻，翻到头接下一个档。进度条按问题数计。键盘 1–4 回答当前高亮（第一个未答）的问题。
+  inventory.py（四模型逐单元盘点，标运行来源与是否齐全）→ select_pages.py（每格每模型挑 5 个，确定性排序）→ build_cards.py（出图 + 页面表 + 入库清单；LingBot latent 在 CPU 上解码）→ check_pages.py（抽页核对 + 全表同一运行核对）→ check_real_consistency.py（真实帧成败与记录一致）。
+- 导航：第一个下拉选 任务×档位，第二个选 Group 1–5；←/→ 在组间翻，翻到头接下一个档。进度条按问题数计。键盘 1–4 回答当前高亮（第一个未答）的问题。
 - 新卡入库：`SUPABASE_SERVICE_KEY=... python3 tools/add_samecase_cards.py --manifest <manifest_samecase.json> [--yes]`，插入已有的 round 2 / round 3，库里已有的 unit_id 跳过（旧卡与旧标注不动）。
 - 导出：`SUPABASE_SERVICE_KEY=... python3 tools/export_samecase.py --out <文件> [--cutoff <上线时刻>]`，同卷页标注与旧标注分两张表。
 - 改版前的页面存档：`wm_verdict/libero/out/annotation/samecase_20261115/index_before_samecase_20261115.html`。

@@ -53,7 +53,7 @@ def main():
             for kind, rid in (("real", 2), ("imag", 3)):
                 if r[kind] and (rid, r[kind]) in by:
                     c = by[(rid, r[kind])]; on_page.add(c["id"])
-                    qs.append(dict(page_id=p["id"], T=p["T"], level=p["level"], seed_no=p["seed_no"], anchor=p["anchor"], k=p["k"],
+                    qs.append(dict(page_id=p["id"], T=p["T"], level=p["level"], group=p.get("group"),
                                    model=r["model"], kind=kind, unit_id=r[kind], card_id=c["id"]))
     ids = [c["id"] for c in cards]
     ann = []

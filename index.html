@@ -46,7 +46,6 @@ figcaption{font-size:12px;color:var(--muted);margin-top:4px}
 .mrow{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:14px 0;background:var(--card)}
 .mrow > h2{font-size:16px;margin:0 0 8px}
 .mrow > h2 .tag{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:1px 10px}
-.mrow > h2 .proxy{font-size:13px;font-weight:600;color:var(--warn);margin-left:8px}
 .parts{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:12px;align-items:start}
 @media (max-width:900px){ .parts{grid-template-columns:1fr} }
 .part{border:2px solid var(--line);border-radius:10px;padding:10px 12px}
@@ -104,7 +103,7 @@ a{color:var(--accent)}
         <div class="row">
           <span id="who" class="meta"></span>
           <select id="cellSel" title="Task × perturbation level"></select>
-          <select id="seedSel" title="Seed"></select>
+          <select id="groupSel" title="Group"></select>
         </div>
         <button id="btnLogout" class="ghost">Sign out</button>
       </div>
@@ -116,7 +115,7 @@ a{color:var(--accent)}
       <div class="desc" id="taskDesc"></div>
       <div class="desc" id="pertDesc"></div>
       <div class="desc" id="caseDesc"></div>
-      <p class="same" id="sameNote">Same initial condition and same perturbation — each of the four models executed it on its own.</p>
+      <p class="same" id="sameNote">Same task and same perturbation. Each row is one closed-loop run of that model.</p>
       <figure class="refbox"><img id="refImg" alt="reference"><figcaption>Reference: task completed</figcaption></figure>
       <div id="rows"></div>
       <div class="row" style="margin-top:10px;justify-content:space-between">
@@ -124,7 +123,7 @@ a{color:var(--accent)}
           <button id="btnPrev" class="ghost">← Previous</button>
           <button id="btnNext" class="ghost">Next →</button>
         </div>
-        <span class="kbd"><b>1</b>–<b>4</b> answer highlighted · <b>←</b>/<b>→</b> seed</span>
+        <span class="kbd"><b>1</b>–<b>4</b> answer highlighted · <b>←</b>/<b>→</b> previous / next group</span>
       </div>
       <p id="saveMsg" class="meta"></p>
     </div>
@@ -147,7 +146,7 @@ const MODEL_NAME = { lingbot: "LingBot-VA", openwam: "OpenWAM-α", cosmos: "Cosm
 // 入库照旧（2026-11-15 同卷改版）：REAL 区 = round 2 的卡，IMAGINED 区 = round 3 的卡，按 unit_id 对应；
 // 页面结构（哪一页放哪几张卡）由 data/samecase_pages.json 给出，数据库结构不变。
 const ROUND_REAL = 2, ROUND_IMAG = 3;
-const PAGES_URL = "data/samecase_pages.json?v=2";
+const PAGES_URL = "data/samecase_pages.json?v=4";
 
 const TASK_INFO = {
   t5: { title: "Put the book into the BACK compartment of the caddy", crit: "the book is inside the BACK compartment of the caddy" },
@@ -298,7 +297,7 @@ function fillCellSel(){
   }).join("");
 }
 $("cellSel").onchange = e => { const c = cells[+e.target.value]; const j = c.idx.find(k => !pageDone(pages[k])); idx = j == null ? c.idx[0] : j; render(); };
-$("seedSel").onchange = e => { idx = cells[cellOf(idx)].idx[+e.target.value]; render(); };
+$("groupSel").onchange = e => { idx = cells[cellOf(idx)].idx[+e.target.value]; render(); };
 function step(dir){ const j = idx + dir; if (j >= 0 && j < pages.length) { idx = j; render(); } }
 
 function partHTML(kind, r, card){
@@ -321,26 +320,22 @@ function activeCard(p){ for (const c of qsOf(p)) if (!mine.has(c.id)) return c.i
 function render(){
   const answered = [...new Set(pages.flatMap(p => qsOf(p).map(c => c.id)))].filter(id => mine.has(id)).length;
   $("progBar").style.width = nQ ? (100 * answered / nQ) + "%" : "0%";
-  $("progTxt").textContent = `${answered} / ${nQ} questions answered · ${pages.length} pages (${cells.length} conditions × up to 5 seeds)`;
+  $("progTxt").textContent = `${answered} / ${nQ} questions answered · ${pages.length} pages (${cells.length} conditions × up to 5 groups)`;
   if (!pages.length) { $("pagePanel").hidden = true; return; }
   $("pagePanel").hidden = false;
   const p = pages[idx], ci = cellOf(idx), cell = cells[ci];
   $("cellSel").value = ci;
-  $("seedSel").innerHTML = cell.idx.map((j, k) => `<option value="${k}">Seed ${k + 1} / ${cell.idx.length}${pageDone(pages[j]) ? " ✓" : ""}</option>`).join("");
-  $("seedSel").value = cell.idx.indexOf(idx);
+  $("groupSel").innerHTML = cell.idx.map((j, k) => `<option value="${k}">Group ${k + 1} / ${cell.idx.length}${pageDone(pages[j]) ? " ✓" : ""}</option>`).join("");
+  $("groupSel").value = cell.idx.indexOf(idx);
   const ti = TASK_INFO[p.task] || { title: p.task };
   $("taskDesc").innerHTML = `<b>Task ${esc(p.T)}</b> ${esc(ti.title)}${ti.crit ? ` — completed = ${esc(ti.crit)}` : ""}`;
   $("pertDesc").innerHTML = `<b>Perturbation</b> ${esc(pertText(p.level))}`;
-  $("caseDesc").innerHTML = `<b>Test case</b> anchor ${esc(p.anchor)} · seed ${esc(p.k)}${p.seed_value != null ? ` (${esc(p.seed_value)})` : ""}`;
+  $("caseDesc").innerHTML = `<b>Group</b> ${esc(cell.idx.indexOf(idx) + 1)} of ${esc(cell.idx.length)} for this condition`;
   setImg($("refImg"), `cards/ref/${p.task}.png`);
   const act = activeCard(p);
-  const anyProxy = p.rows.some(r => r.proxy && (r.realCard || r.imagCard));
-  $("sameNote").textContent = anyProxy
-    ? "Same task and perturbation. ⚠ rows: that model's own initial condition and seed."
-    : "Same initial condition and perturbation for all four models.";
-  $("rows").innerHTML = p.rows.map(r => `<section class="mrow"><h2><span class="tag">${esc(MODEL_NAME[r.model] || r.model)}</span>${r.proxy && (r.realCard || r.imagCard)
-      ? ` <span class="proxy">⚠ different initial condition / seed (${esc(r.proxy.note)})</span>` : ""}</h2>
-    <div class="parts">${partHTML("real", r, r.realCard)}${partHTML("imag", r, r.imagCard)}</div></section>`).join("");
+  $("rows").innerHTML = p.rows.map(r => `<section class="mrow"><h2><span class="tag">${esc(MODEL_NAME[r.model] || r.model)}</span></h2>
+    <div class="parts">${r.note ? `<div class="part none">${esc(r.note)}</div>`
+      : partHTML("real", r, r.realCard) + partHTML("imag", r, r.imagCard)}</div></section>`).join("");
   if (act) { const el = document.querySelector(`.part[data-q="${act}"]`); if (el) el.classList.add("active"); }
   document.querySelectorAll("#rows img.judged").forEach(el => {
     const d = `cards/r${el.dataset.round}/${el.dataset.uid}`;
