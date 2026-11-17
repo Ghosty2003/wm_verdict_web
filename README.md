@@ -57,6 +57,7 @@ where c.round_id = <轮次id> order by c.sort_key, a.email;
 - 挑单元：每模型优先“齐全”的单元（真实画面 + 同一次运行的想象帧），v3 页上齐全的旧单元留在原组位置；凑不齐 5 个才用只有真实画面的补。规则见 select_pages.py 文件头。
 - 页面表在 `data/samecase_pages.json`（哪页放哪几张卡），由 `wm_verdict/libero/out/annotation/samecase_20261115/` 的脚本生成：
   inventory.py（四模型逐单元盘点，标运行来源与是否齐全）→ select_pages.py（每格每模型挑 5 个，确定性排序）→ build_cards.py（出图 + 页面表 + 入库清单；LingBot latent 在 CPU 上解码）→ check_pages.py（抽页核对 + 全表同一运行核对）→ check_real_consistency.py（真实帧成败与记录一致）。
+- v5（2026-11-17）：页面与 v4 相同，只给 351 个 Cosmos T2/T3 单元（页上已有 REAL 卡、IMAGINED 原为“无”）补上想象末帧：同一次原执行最后一次规划在原存档输入上的末窗重算（输入哈希一致；原 trace 里保存下来的动作片段逐值一致，多数单元原 episode 提前结束，只能核对已保存的前缀）。脚本 `v5_cosmos_imag.py`，统计 `v5_stats.json`。
 - 导航：第一个下拉选 任务×档位，第二个选 Group 1–5；←/→ 在组间翻，翻到头接下一个档。进度条按问题数计。键盘 1–4 回答当前高亮（第一个未答）的问题。
 - 新卡入库：`SUPABASE_SERVICE_KEY=... python3 tools/add_samecase_cards.py --manifest <manifest_samecase.json> [--yes]`，插入已有的 round 2 / round 3，库里已有的 unit_id 跳过（旧卡与旧标注不动）。
 - 导出：`SUPABASE_SERVICE_KEY=... python3 tools/export_samecase.py --out <文件> [--cutoff <上线时刻>]`，同卷页标注与旧标注分两张表。
