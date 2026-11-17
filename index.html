@@ -149,7 +149,7 @@ const ROUND_REAL = 2, ROUND_IMAG = 3;
 const PAGES_URL = "data/samecase_pages.json?v=4";
 
 const TASK_INFO = {
-  t5: { title: "Put the book into the BACK compartment of the caddy", crit: "the book is inside the BACK compartment of the caddy" },
+  t5: { title: "Put the book into the BACK compartment of the caddy", crit: "the book stands fully down inside the BACK compartment of the caddy, released by the gripper (top of the book at or below the caddy rim). NOT completed: book still held or hanging above the rim, lying across the rim, tilted half out, in a front compartment, or on the table. If the book cannot be seen anywhere (not on the table, not in the gripper, not in a front compartment) while the gripper is over or inside the back compartment, answer borderline" },
   t3: { title: "Put the black bowl into the bottom drawer and close it", crit: "the black bowl is inside the bottom drawer AND the drawer is fully closed (a white gap line along the drawer front means it is NOT fully closed)" },
   t2: { title: "Turn on the stove and put the moka pot on it", crit: "the stove is turned ON AND the moka pot is standing on the stove" },
   t4: { title: "White mug on the LEFT plate, yellow-and-white mug on the RIGHT plate", crit: "the white mug is on the LEFT plate AND the yellow-and-white mug is on the RIGHT plate" },
@@ -162,7 +162,7 @@ function pertText(lv){
   if (lv === "B0") return "B0 control: protocol render path, no image corruption.";
   if (/^A\d$/.test(lv)) return `Initial object displacement ${lv} (A0 / A1 = within the training range; A2 → A4 = progressively further outside it).`;
   if (/^P\d$/.test(lv)) return `Initial arm pose offset ${lv} (P0 → P4 = progressively larger offset of the robot's starting joint configuration).`;
-  if (/^O\d$/.test(lv)) return `Occlusion ${lv}: a gray occluder patch is pasted onto every real frame the model reads (O1 → O5 = progressively larger). Only the model's input changes.`;
+  if (/^O\d$/.test(lv)) return `Occlusion ${lv}: a black square (centered; side = 1/16 → 5/16 of the image height for O1 → O5) is pasted onto the main-camera frame of the model's FIRST planning input only. Later frames are not occluded (a model that re-reads past frames from its history window can still see that one occluded frame). Only the model's input changes.`;
   if (/^Em\d$/.test(lv)) return `Physics: target-object mass × ${[1.5, 2, 4, 8][n-1]} (${lv}).`;
   if (/^Ef\d$/.test(lv)) return `Physics: contact friction × ${[0.8, 0.6, 0.4, 0.2][n-1]} (${lv}).`;
   if (/^G\d$/.test(lv)) return `Action gain × ${[0.9, 0.75, 0.55, 0.4][n-1]} (${lv}): every commanded action is scaled down, so the robot moves less than the model commanded.`;
