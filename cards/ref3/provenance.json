@@ -1,0 +1,207 @@
+{
+ "t5": {
+  "success": [
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/h100/runs/lingbot_base/rerun_closed/lingbot_libero10_t5_a3__k1__none.npz",
+    "step": 194,
+    "sim_success_any": true
+   },
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/h100/runs/lingbot_phys/rerun_closed/lingbot_libero10_t5_a0__k3__none__Em1.npz",
+    "step": 175,
+    "sim_success_any": true
+   },
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/h100/runs/lingbot_phys/rerun_closed/lingbot_libero10_t5_a4__k0__none__NR2.npz",
+    "step": 192,
+    "sim_success_any": true
+   }
+  ],
+  "fail": [
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/h100/runs/lingbot_phys/rerun_closed/lingbot_libero10_t5_a0__k2__none__NL2.npz",
+    "step": 400,
+    "sim_success_any": false
+   },
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/h100/runs/lingbot_phys/rerun_closed/lingbot_libero10_t5_a1__k8__none__K3.npz",
+    "step": 400,
+    "sim_success_any": false
+   },
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/h100/runs/lingbot_phys/rerun_closed/lingbot_libero10_t5_a0__k4__none__K6.npz",
+    "step": 400,
+    "sim_success_any": false
+   },
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/h100/runs/lingbot_phys/rerun_closed/lingbot_libero10_t5_a4__k5__none__K6.npz",
+    "step": 400,
+    "sim_success_any": false
+   },
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/h100/runs/lingbot_phys/rerun_closed/lingbot_libero10_t5_a3__k2__none__K6.npz",
+    "step": 400,
+    "sim_success_any": false
+   }
+  ],
+  "borderline": [
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/h100/runs/lingbot_base/rerun_closed/lingbot_libero10_t5_a3__k1__none.npz",
+    "step": 169,
+    "steps_before_first_success": 25,
+    "sim_success_at_step": false
+   }
+  ]
+ },
+ "t3": {
+  "success": [
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/h100/runs/lingbot_base/rerun_closed/lingbot_libero10_t3_a1__k4__none.npz",
+    "step": 225,
+    "sim_success_any": true
+   },
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/h100/runs/lingbot_base/rerun_closed/lingbot_libero10_t3_a2__k6__none.npz",
+    "step": 253,
+    "sim_success_any": true
+   }
+  ],
+  "fail": [
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/h100/runs/lingbot_famA/rerun_closed/lingbot_libero10_t3_fa0__k7__A4.npz",
+    "step": 400,
+    "sim_success_any": false
+   },
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/h100/runs/lingbot_famA/rerun_closed/lingbot_libero10_t3_fa0__k2__A3.npz",
+    "step": 400,
+    "sim_success_any": false
+   },
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/h100/runs/lingbot_famP/rerun_closed/lingbot_libero10_t3_fp0__k5__P4.npz",
+    "step": 400,
+    "sim_success_any": false
+   }
+  ],
+  "borderline": [
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/h100/runs/lingbot_base/rerun_closed/lingbot_libero10_t3_a1__k4__none.npz",
+    "step": 213,
+    "steps_before_first_success": 12,
+    "sim_success_at_step": false
+   }
+  ]
+ },
+ "t2": {
+  "success": [
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/cluster_lb_20261116/runs/lingbot_t2/famB/rerun_closed/lingbot_libero10_t2_a0__k0__B0.npz",
+    "step": 255,
+    "sim_success_any": true
+   },
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/cluster_lb_20261116/runs/lingbot_t2/famB/rerun_closed/lingbot_libero10_t2_a0__k2__B0.npz",
+    "step": 248,
+    "sim_success_any": true
+   }
+  ],
+  "fail": [
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/runs/lingbot_t2/rerun_closed/egn/lingbot_libero10_t2_a3__k8__Ef1.npz",
+    "step": 400,
+    "sim_success_any": false
+   },
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/runs/lingbot_t2/rerun_closed/famA/lingbot_libero10_t2_fa3__k2__A3.npz",
+    "step": 400,
+    "sim_success_any": false
+   }
+  ],
+  "borderline": [
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/cluster_lb_20261116/runs/lingbot_t2/famB/rerun_closed/lingbot_libero10_t2_a0__k0__B0.npz",
+    "step": 230,
+    "steps_before_first_success": 25,
+    "sim_success_at_step": false
+   }
+  ]
+ },
+ "t4": {
+  "success": [
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/cluster_lb_20261116/runs/lingbot_t4/famB/rerun_closed/lingbot_libero10_t4_a0__k0__B0.npz",
+    "step": 250,
+    "sim_success_any": true
+   },
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/cluster_lb_20261116/runs/lingbot_t4/famB/rerun_closed/lingbot_libero10_t4_a0__k2__B0.npz",
+    "step": 240,
+    "sim_success_any": true
+   }
+  ],
+  "fail": [
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/runs/lingbot_t4/rerun_closed/egn/lingbot_libero10_t4_a0__k8__NL5.npz",
+    "step": 400,
+    "sim_success_any": false
+   },
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/runs/lingbot_t4/rerun_closed/egn/lingbot_libero10_t4_a0__k2__NL4.npz",
+    "step": 400,
+    "sim_success_any": false
+   },
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/runs/lingbot_t4/rerun_closed/egn/lingbot_libero10_t4_a0__k5__NR4.npz",
+    "step": 400,
+    "sim_success_any": false
+   }
+  ],
+  "borderline": [
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/cluster_lb_20261116/runs/lingbot_t4/famB/rerun_closed/lingbot_libero10_t4_a0__k0__B0.npz",
+    "step": 225,
+    "steps_before_first_success": 25,
+    "sim_success_at_step": false
+   }
+  ]
+ },
+ "t6": {
+  "success": [
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/runs/lingbot_t6/rerun_closed/base/lingbot_libero10_t6_a0__k0.npz",
+    "step": 226,
+    "sim_success_any": true
+   },
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/runs/lingbot_t6/rerun_closed/base/lingbot_libero10_t6_a1__k4.npz",
+    "step": 218,
+    "sim_success_any": true
+   }
+  ],
+  "fail": [
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/runs/lingbot_t6/rerun_closed/egn/lingbot_libero10_t6_a1__k6__NL2.npz",
+    "step": 400,
+    "sim_success_any": false
+   },
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/runs/lingbot_t6/rerun_closed/egn/lingbot_libero10_t6_a0__k2__NR5.npz",
+    "step": 400,
+    "sim_success_any": false
+   },
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/runs/lingbot_t6/rerun_closed/egn/lingbot_libero10_t6_a1__k6__NL4.npz",
+    "step": 400,
+    "sim_success_any": false
+   }
+  ],
+  "borderline": [
+   {
+    "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/runs/lingbot_t6/rerun_closed/base/lingbot_libero10_t6_a0__k0.npz",
+    "step": 196,
+    "steps_before_first_success": 30,
+    "sim_success_at_step": false
+   }
+  ]
+ }
+}

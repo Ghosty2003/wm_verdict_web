@@ -39,17 +39,19 @@ button:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px sol
 .desc{border-left:3px solid var(--accent);padding:4px 12px;margin:6px 0;font-size:14px}
 .desc b{display:inline-block;min-width:110px}
 .same{font-weight:600;margin:8px 0 4px}
-.refbox{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;max-width:760px;margin:10px 0}
-@media (max-width:600px){ .refbox{grid-template-columns:1fr} }
-.refcase{border:3px solid;border-radius:10px;padding:6px 8px 8px}
-.refcase.ok{border-color:#1f8a4c}
-.refcase.bad{border-color:#c0392b}
-.refcase h3{margin:0 0 6px;font-size:14px}
-.refcase.ok h3{color:#1f8a4c}
-.refcase.bad h3{color:#c0392b}
-.refpair{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.refpair img{width:100%;border-radius:6px;background:#000;cursor:zoom-in;display:block}
-.refpair figcaption{text-align:center}
+.refbox3{margin:10px 0;display:flex;flex-direction:column;gap:8px}
+.refrow{border:3px solid;border-radius:10px;padding:6px 8px 8px}
+.refrow.ok{border-color:#1f8a4c}
+.refrow.mid{border-color:#d9a106}
+.refrow.bad{border-color:#c0392b}
+.refrow h3{margin:0 0 6px;font-size:14px}
+.refrow.ok h3{color:#1f8a4c}
+.refrow.mid h3{color:#b8860b}
+.refrow.bad h3{color:#c0392b}
+.refrow .ex{display:flex;flex-wrap:wrap;gap:10px}
+.refpair{display:grid;grid-template-columns:1fr 1fr;gap:3px;width:220px;max-width:100%}
+.refpair img{width:100%;border-radius:5px;background:#000;cursor:zoom-in;display:block}
+.refcap{font-size:11px;color:var(--muted);margin-top:4px}
 figure{margin:0}
 figcaption{font-size:12px;color:var(--muted);margin-top:4px}
 .mrow{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:14px 0;background:var(--card)}
@@ -125,14 +127,7 @@ a{color:var(--accent)}
       <div class="desc" id="pertDesc"></div>
       <div class="desc" id="caseDesc"></div>
       <p class="same" id="sameNote">Same task and same perturbation. Each row is one closed-loop run of that model.</p>
-      <div class="refbox">
-        <div class="refcase ok"><h3>✓ Reference: SUCCESS (task completed)</h3>
-          <div class="refpair"><figure><img id="refSm" alt="success, main camera"><figcaption>Main camera</figcaption></figure>
-          <figure><img id="refSw" alt="success, wrist camera"><figcaption>Wrist camera</figcaption></figure></div></div>
-        <div class="refcase bad"><h3>✗ Reference: FAILURE (not completed)</h3>
-          <div class="refpair"><figure><img id="refFm" alt="failure, main camera"><figcaption>Main camera</figcaption></figure>
-          <figure><img id="refFw" alt="failure, wrist camera"><figcaption>Wrist camera</figcaption></figure></div></div>
-      </div>
+      <div id="refbox" class="refbox3"></div>
       <div id="rows"></div>
       <div class="row" style="margin-top:10px;justify-content:space-between">
         <div class="row">
@@ -359,8 +354,7 @@ function render(){
   $("taskDesc").innerHTML = `<b>Task ${esc(p.T)}</b> ${esc(ti.title)}${ti.crit ? ` — completed = ${esc(ti.crit)}` : ""}`;
   $("pertDesc").innerHTML = `<b>Perturbation</b> ${esc(pertText(p.level))}`;
   $("caseDesc").innerHTML = `<b>Group</b> ${esc(cell.idx.indexOf(idx) + 1)} of ${esc(cell.idx.length)} for this condition`;
-  for (const [id, f] of [["refSm", "success_main"], ["refSw", "success_wrist"], ["refFm", "fail_main"], ["refFw", "fail_wrist"]])
-    setImg($(id), `cards/ref2/${p.task}_${f}.png?v=1`);
+  renderRefs(p.task);
   const act = activeCard(p);
   $("rows").innerHTML = p.rows.map(r => `<section class="mrow"><h2><span class="tag">${esc(MODEL_NAME[r.model] || r.model)}</span></h2>
     <div class="parts">${r.note ? `<div class="part none">${esc(r.note)}</div>`
@@ -387,7 +381,20 @@ async function save(cardId, label){
 }
 $("btnPrev").onclick = () => step(-1);
 $("btnNext").onclick = () => step(1);
-for (const id of ["refSm", "refSw", "refFm", "refFw"]) $(id).onclick = () => zoom($(id).src);
+// 参考例（cards/ref3/，来源见 cards/ref3/provenance.json）：每个任务若干成功 / 1 个 borderline / 若干失败，每例主视角 + 腕部视角
+const REF_N = { t5: { success: 3, borderline: 1, fail: 5 }, t3: { success: 2, borderline: 1, fail: 3 },
+  t2: { success: 2, borderline: 1, fail: 2 }, t4: { success: 2, borderline: 1, fail: 3 }, t6: { success: 2, borderline: 1, fail: 3 } };
+const REF_ROWS = [["success", "ok", "✓ SUCCESS — task completed"], ["borderline", "mid", "~ BORDERLINE — almost, but not yet completed"], ["fail", "bad", "✗ FAILURE — not completed"]];
+let refTask = null;
+function renderRefs(task){
+  if (task === refTask) return; refTask = task;
+  const n = REF_N[task] || { success: 0, borderline: 0, fail: 0 };
+  $("refbox").innerHTML = REF_ROWS.filter(([k]) => n[k]).map(([k, cls, title]) => `<div class="refrow ${cls}"><h3>${title}</h3><div class="ex">` +
+    Array.from({ length: n[k] }, (_, j) => `<div><div class="refpair"><img data-ref="cards/ref3/${task}_${k}${j}_main.png?v=1" alt="${k} example ${j + 1}, main camera">` +
+      `<img data-ref="cards/ref3/${task}_${k}${j}_wrist.png?v=1" alt="${k} example ${j + 1}, wrist camera"></div><div class="refcap">main · wrist</div></div>`).join("") +
+    `</div></div>`).join("");
+  document.querySelectorAll("#refbox img[data-ref]").forEach(el => { setImg(el, el.dataset.ref); el.onclick = () => zoom(el.src); });
+}
 document.addEventListener("keydown", e => {
   if ($("pagePanel").hidden || e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
   if (e.key === "ArrowLeft") step(-1);
