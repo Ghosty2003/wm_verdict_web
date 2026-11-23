@@ -39,8 +39,17 @@ button:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px sol
 .desc{border-left:3px solid var(--accent);padding:4px 12px;margin:6px 0;font-size:14px}
 .desc b{display:inline-block;min-width:110px}
 .same{font-weight:600;margin:8px 0 4px}
-.refbox{max-width:520px;margin:10px 0}
-.refbox img{width:100%;border:1px solid var(--line);border-radius:8px;background:#000;cursor:zoom-in}
+.refbox{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;max-width:760px;margin:10px 0}
+@media (max-width:600px){ .refbox{grid-template-columns:1fr} }
+.refcase{border:3px solid;border-radius:10px;padding:6px 8px 8px}
+.refcase.ok{border-color:#1f8a4c}
+.refcase.bad{border-color:#c0392b}
+.refcase h3{margin:0 0 6px;font-size:14px}
+.refcase.ok h3{color:#1f8a4c}
+.refcase.bad h3{color:#c0392b}
+.refpair{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.refpair img{width:100%;border-radius:6px;background:#000;cursor:zoom-in;display:block}
+.refpair figcaption{text-align:center}
 figure{margin:0}
 figcaption{font-size:12px;color:var(--muted);margin-top:4px}
 .mrow{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:14px 0;background:var(--card)}
@@ -116,7 +125,14 @@ a{color:var(--accent)}
       <div class="desc" id="pertDesc"></div>
       <div class="desc" id="caseDesc"></div>
       <p class="same" id="sameNote">Same task and same perturbation. Each row is one closed-loop run of that model.</p>
-      <figure class="refbox"><img id="refImg" alt="reference"><figcaption>Reference: task completed</figcaption></figure>
+      <div class="refbox">
+        <div class="refcase ok"><h3>✓ Reference: SUCCESS (task completed)</h3>
+          <div class="refpair"><figure><img id="refSm" alt="success, main camera"><figcaption>Main camera</figcaption></figure>
+          <figure><img id="refSw" alt="success, wrist camera"><figcaption>Wrist camera</figcaption></figure></div></div>
+        <div class="refcase bad"><h3>✗ Reference: FAILURE (not completed)</h3>
+          <div class="refpair"><figure><img id="refFm" alt="failure, main camera"><figcaption>Main camera</figcaption></figure>
+          <figure><img id="refFw" alt="failure, wrist camera"><figcaption>Wrist camera</figcaption></figure></div></div>
+      </div>
       <div id="rows"></div>
       <div class="row" style="margin-top:10px;justify-content:space-between">
         <div class="row">
@@ -254,22 +270,36 @@ async function enter(user){
   await loadAll();
 }
 
+// 加载提速（2026-11-23）：原来卡片按 1000 条一批、标注按 400 个 id 一批全部串行（约 45 次往返）。
+// 现在：卡片先取总数再并行拉各批；标注只按当前用户查（通常 1 次）；页面表 / 卡片 / 标注三路同时发。
+const STEP = 1000;
 async function fetchCards(){
-  const out = [], step = 1000;
-  for (let from = 0; ; from += step) {
-    const { data, error } = await sb.from("cards").select("id,round_id,unit_id,model,task,level,label_set")
-      .in("round_id", [ROUND_REAL, ROUND_IMAG]).order("id").range(from, from + step - 1);
+  const base = () => sb.from("cards").select("id,round_id,unit_id,model,task,level,label_set").in("round_id", [ROUND_REAL, ROUND_IMAG]);
+  const { count, error } = await sb.from("cards").select("id", { count: "exact", head: true }).in("round_id", [ROUND_REAL, ROUND_IMAG]);
+  if (error) throw error;
+  const n = Math.ceil((count || 0) / STEP) || 1;
+  const parts = await Promise.all(Array.from({ length: n }, (_, k) =>
+    base().order("id").range(k * STEP, k * STEP + STEP - 1).then(({ data, error }) => { if (error) throw error; return data || []; })));
+  const out = parts.flat();
+  if (out.length < (count || 0)) throw new Error(`cards: got ${out.length} of ${count}`);
+  return out;
+}
+async function fetchMine(){
+  const out = [];
+  for (let from = 0; ; from += STEP) {
+    const { data, error } = await sb.from("annotations").select("card_id,label,note").eq("user_id", me.id).order("card_id").range(from, from + STEP - 1);
     if (error) throw error;
     out.push(...(data || []));
-    if (!data || data.length < step) return out;
+    if (!data || data.length < STEP) return out;
   }
 }
 
 async function loadAll(){
-  let all;
+  let all, myAnn;
   try {
-    const r = await fetch(PAGES_URL); if (!r.ok) throw new Error("page table " + r.status);
-    P = await r.json(); all = await fetchCards();
+    [P, all, myAnn] = await Promise.all([
+      fetch(PAGES_URL).then(r => { if (!r.ok) throw new Error("page table " + r.status); return r.json(); }),
+      fetchCards(), fetchMine()]);
   } catch (e) { $("fatal").textContent = "Could not load: " + (e.message || e); return; }
   cardOf = new Map(all.map(c => [`${c.round_id}|${c.unit_id}`, c]));
   pages = P.pages.map(p => ({ ...p, rows: p.rows.map(r => ({ ...r,
@@ -277,11 +307,9 @@ async function loadAll(){
     imagCard: r.imag ? cardOf.get(`${ROUND_IMAG}|${r.imag}`) || null : null })) }));
   const ids = [...new Set(pages.flatMap(p => qsOf(p).map(c => c.id)))];
   nQ = ids.length;
+  const idSet = new Set(ids);
   mine = new Map();
-  for (let i = 0; i < ids.length; i += 400) {
-    const { data: as } = await sb.from("annotations").select("card_id,label,note").eq("user_id", me.id).in("card_id", ids.slice(i, i + 400));
-    (as || []).forEach(a => mine.set(a.card_id, a));
-  }
+  myAnn.forEach(a => { if (idSet.has(a.card_id)) mine.set(a.card_id, a); });
   const seen = new Map();
   pages.forEach((p, i) => { const k = `${p.T}|${p.level}`; if (!seen.has(k)) seen.set(k, { key: k, T: p.T, task: p.task, level: p.level, first: i, idx: [] }); seen.get(k).idx.push(i); });
   cells = [...seen.values()];
@@ -331,7 +359,8 @@ function render(){
   $("taskDesc").innerHTML = `<b>Task ${esc(p.T)}</b> ${esc(ti.title)}${ti.crit ? ` — completed = ${esc(ti.crit)}` : ""}`;
   $("pertDesc").innerHTML = `<b>Perturbation</b> ${esc(pertText(p.level))}`;
   $("caseDesc").innerHTML = `<b>Group</b> ${esc(cell.idx.indexOf(idx) + 1)} of ${esc(cell.idx.length)} for this condition`;
-  setImg($("refImg"), `cards/ref/${p.task}.png`);
+  for (const [id, f] of [["refSm", "success_main"], ["refSw", "success_wrist"], ["refFm", "fail_main"], ["refFw", "fail_wrist"]])
+    setImg($(id), `cards/ref2/${p.task}_${f}.png?v=1`);
   const act = activeCard(p);
   $("rows").innerHTML = p.rows.map(r => `<section class="mrow"><h2><span class="tag">${esc(MODEL_NAME[r.model] || r.model)}</span></h2>
     <div class="parts">${r.note ? `<div class="part none">${esc(r.note)}</div>`
@@ -358,7 +387,7 @@ async function save(cardId, label){
 }
 $("btnPrev").onclick = () => step(-1);
 $("btnNext").onclick = () => step(1);
-$("refImg").onclick = () => zoom($("refImg").src);
+for (const id of ["refSm", "refSw", "refFm", "refFw"]) $(id).onclick = () => zoom($(id).src);
 document.addEventListener("keydown", e => {
   if ($("pagePanel").hidden || e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
   if (e.key === "ArrowLeft") step(-1);
