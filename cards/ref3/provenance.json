@@ -42,14 +42,13 @@
     "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/h100/runs/lingbot_phys/rerun_closed/lingbot_libero10_t5_a3__k2__none__K6.npz",
     "step": 400,
     "sim_success_any": false
-   }
-  ],
-  "borderline": [
+   },
    {
     "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/h100/runs/lingbot_base/rerun_closed/lingbot_libero10_t5_a3__k1__none.npz",
     "step": 169,
     "steps_before_first_success": 25,
-    "sim_success_at_step": false
+    "sim_success_at_step": false,
+    "note": "was the borderline example until 2026-11-24; by the rubric (held / half inserted / gap line / pudding not placed) it is not_success"
    }
   ]
  },
@@ -81,14 +80,13 @@
     "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/h100/runs/lingbot_famP/rerun_closed/lingbot_libero10_t3_fp0__k5__P4.npz",
     "step": 400,
     "sim_success_any": false
-   }
-  ],
-  "borderline": [
+   },
    {
     "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/h100/runs/lingbot_base/rerun_closed/lingbot_libero10_t3_a1__k4__none.npz",
     "step": 213,
     "steps_before_first_success": 12,
-    "sim_success_at_step": false
+    "sim_success_at_step": false,
+    "note": "was the borderline example until 2026-11-24; by the rubric (held / half inserted / gap line / pudding not placed) it is not_success"
    }
   ]
  },
@@ -193,14 +191,13 @@
     "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/runs/lingbot_t6/rerun_closed/egn/lingbot_libero10_t6_a1__k6__NL4.npz",
     "step": 400,
     "sim_success_any": false
-   }
-  ],
-  "borderline": [
+   },
    {
     "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/runs/lingbot_t6/rerun_closed/base/lingbot_libero10_t6_a0__k0.npz",
     "step": 196,
     "steps_before_first_success": 30,
-    "sim_success_at_step": false
+    "sim_success_at_step": false,
+    "note": "was the borderline example until 2026-11-24; by the rubric (held / half inserted / gap line / pudding not placed) it is not_success"
    }
   ]
  }

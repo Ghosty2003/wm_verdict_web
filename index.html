@@ -382,16 +382,24 @@ async function save(cardId, label){
 $("btnPrev").onclick = () => step(-1);
 $("btnNext").onclick = () => step(1);
 // 参考例（cards/ref3/，来源见 cards/ref3/provenance.json）：每个任务若干成功 / 1 个 borderline / 若干失败，每例主视角 + 腕部视角
-const REF_N = { t5: { success: 3, borderline: 1, fail: 5 }, t3: { success: 2, borderline: 1, fail: 3 },
-  t2: { success: 2, borderline: 1, fail: 2 }, t4: { success: 2, borderline: 1, fail: 3 }, t6: { success: 2, borderline: 1, fail: 3 } };
-const REF_ROWS = [["success", "ok", "✓ SUCCESS — task completed"], ["borderline", "mid", "~ BORDERLINE — almost, but not yet completed"], ["fail", "bad", "✗ FAILURE — not completed"]];
+// 2026-11-24：borderline 按判别规则（judge_prompt.md）定义；原 T0/T1/T4 的“快完成”例按规则属失败，移入 FAILURE 行
+const REF_N = { t5: { success: 3, borderline: 0, fail: 6 }, t3: { success: 2, borderline: 0, fail: 4 },
+  t2: { success: 2, borderline: 1, fail: 2 }, t4: { success: 2, borderline: 1, fail: 3 }, t6: { success: 2, borderline: 0, fail: 4 } };
+const REF_CAP = { t5_fail5: "almost done — still FAILURE", t3_fail3: "almost done — still FAILURE", t6_fail3: "almost done — still FAILURE" };
+const REF_ROWS = [
+  ["success", "ok", "✓ SUCCESS — every task condition is clearly satisfied", ""],
+  ["borderline", "mid", "~ BORDERLINE — you cannot decide between success and not",
+   "Use it when the task looks complete but the image shows generation distortion (missing corner, warped object, melted gripper), or when the key part is hidden / sits right at the edge as the task rules describe. “Almost done but not finished” is NOT borderline — it is a failure."],
+  ["fail", "bad", "✗ FAILURE — clearly not satisfied (including “almost done”)", ""]];
 let refTask = null;
 function renderRefs(task){
   if (task === refTask) return; refTask = task;
   const n = REF_N[task] || { success: 0, borderline: 0, fail: 0 };
-  $("refbox").innerHTML = REF_ROWS.filter(([k]) => n[k]).map(([k, cls, title]) => `<div class="refrow ${cls}"><h3>${title}</h3><div class="ex">` +
-    Array.from({ length: n[k] }, (_, j) => `<div><div class="refpair"><img data-ref="cards/ref3/${task}_${k}${j}_main.png?v=1" alt="${k} example ${j + 1}, main camera">` +
-      `<img data-ref="cards/ref3/${task}_${k}${j}_wrist.png?v=1" alt="${k} example ${j + 1}, wrist camera"></div><div class="refcap">main · wrist</div></div>`).join("") +
+  $("refbox").innerHTML = REF_ROWS.map(([k, cls, title, rule]) => `<div class="refrow ${cls}"><h3>${title}</h3>` +
+    (rule ? `<p class="refcap" style="font-size:12px;margin:0 0 6px">${esc(rule)}</p>` : "") + `<div class="ex">` +
+    Array.from({ length: n[k] }, (_, j) => `<div><div class="refpair"><img data-ref="cards/ref3/${task}_${k}${j}_main.png?v=2" alt="${k} example ${j + 1}, main camera">` +
+      `<img data-ref="cards/ref3/${task}_${k}${j}_wrist.png?v=2" alt="${k} example ${j + 1}, wrist camera"></div>` +
+      `<div class="refcap">${esc(REF_CAP[`${task}_${k}${j}`] || "main · wrist")}</div></div>`).join("") +
     `</div></div>`).join("");
   document.querySelectorAll("#refbox img[data-ref]").forEach(el => { setImg(el, el.dataset.ref); el.onclick = () => zoom(el.src); });
 }
