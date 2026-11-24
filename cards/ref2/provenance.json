@@ -1,13 +1,13 @@
 {
  "t5": {
   "success": {
-   "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/h100/runs/lingbot_base/rerun_closed/lingbot_libero10_t5_a3__k1__none.npz",
+   "npz": "$WMV_ROOT/libero/out/h100/runs/lingbot_base/rerun_closed/lingbot_libero10_t5_a3__k1__none.npz",
    "step": 194,
    "sim_success_any": true,
    "transform": "vertical flip (raw LIBERO render is upside down), 128->256 bicubic"
   },
   "fail": {
-   "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/h100/runs/lingbot_base/rerun_closed/lingbot_libero10_t5_a0__k1__none.npz",
+   "npz": "$WMV_ROOT/libero/out/h100/runs/lingbot_base/rerun_closed/lingbot_libero10_t5_a0__k1__none.npz",
    "step": 400,
    "sim_success_any": false,
    "transform": "vertical flip (raw LIBERO render is upside down), 128->256 bicubic"
@@ -15,13 +15,13 @@
  },
  "t3": {
   "success": {
-   "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/h100/runs/lingbot_base/rerun_closed/lingbot_libero10_t3_a1__k4__none.npz",
+   "npz": "$WMV_ROOT/libero/out/h100/runs/lingbot_base/rerun_closed/lingbot_libero10_t3_a1__k4__none.npz",
    "step": 225,
    "sim_success_any": true,
    "transform": "vertical flip (raw LIBERO render is upside down), 128->256 bicubic"
   },
   "fail": {
-   "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/h100/runs/lingbot_famA/rerun_closed/lingbot_libero10_t3_fa0__k7__A4.npz",
+   "npz": "$WMV_ROOT/libero/out/h100/runs/lingbot_famA/rerun_closed/lingbot_libero10_t3_fa0__k7__A4.npz",
    "step": 400,
    "sim_success_any": false,
    "transform": "vertical flip (raw LIBERO render is upside down), 128->256 bicubic"
@@ -29,13 +29,13 @@
  },
  "t2": {
   "success": {
-   "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/cluster_lb_20261116/runs/lingbot_t2/famB/rerun_closed/lingbot_libero10_t2_a0__k0__B0.npz",
+   "npz": "$WMV_ROOT/libero/out/cluster_lb_20261116/runs/lingbot_t2/famB/rerun_closed/lingbot_libero10_t2_a0__k0__B0.npz",
    "step": 255,
    "sim_success_any": true,
    "transform": "vertical flip (raw LIBERO render is upside down), 128->256 bicubic"
   },
   "fail": {
-   "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/runs/lingbot_t2/rerun_closed/egn/lingbot_libero10_t2_a3__k8__Ef1.npz",
+   "npz": "$WMV_ROOT/libero/out/runs/lingbot_t2/rerun_closed/egn/lingbot_libero10_t2_a3__k8__Ef1.npz",
    "step": 400,
    "sim_success_any": false,
    "transform": "vertical flip (raw LIBERO render is upside down), 128->256 bicubic"
@@ -43,13 +43,13 @@
  },
  "t4": {
   "success": {
-   "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/cluster_lb_20261116/runs/lingbot_t4/famB/rerun_closed/lingbot_libero10_t4_a0__k0__B0.npz",
+   "npz": "$WMV_ROOT/libero/out/cluster_lb_20261116/runs/lingbot_t4/famB/rerun_closed/lingbot_libero10_t4_a0__k0__B0.npz",
    "step": 250,
    "sim_success_any": true,
    "transform": "vertical flip (raw LIBERO render is upside down), 128->256 bicubic"
   },
   "fail": {
-   "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/runs/lingbot_t4/rerun_closed/egn/lingbot_libero10_t4_a0__k8__NL5.npz",
+   "npz": "$WMV_ROOT/libero/out/runs/lingbot_t4/rerun_closed/egn/lingbot_libero10_t4_a0__k8__NL5.npz",
    "step": 400,
    "sim_success_any": false,
    "transform": "vertical flip (raw LIBERO render is upside down), 128->256 bicubic"
@@ -57,13 +57,13 @@
  },
  "t6": {
   "success": {
-   "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/runs/lingbot_t6/rerun_closed/base/lingbot_libero10_t6_a0__k0.npz",
+   "npz": "$WMV_ROOT/libero/out/runs/lingbot_t6/rerun_closed/base/lingbot_libero10_t6_a0__k0.npz",
    "step": 226,
    "sim_success_any": true,
    "transform": "vertical flip (raw LIBERO render is upside down), 128->256 bicubic"
   },
   "fail": {
-   "npz": "/mnt/qnap/chenmg93/wm_verdict/libero/out/runs/lingbot_t6/rerun_closed/egn/lingbot_libero10_t6_a1__k6__NL2.npz",
+   "npz": "$WMV_ROOT/libero/out/runs/lingbot_t6/rerun_closed/egn/lingbot_libero10_t6_a1__k6__NL2.npz",
    "step": 400,
    "sim_success_any": false,
    "transform": "vertical flip (raw LIBERO render is upside down), 128->256 bicubic"

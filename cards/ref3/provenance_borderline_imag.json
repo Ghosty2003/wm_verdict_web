@@ -1,0 +1,102 @@
+{
+ "t5": [
+  {
+   "file": "t5_bimag0.png",
+   "frame_id": "f01868",
+   "model": "openwam",
+   "task": "T0",
+   "level": "K6",
+   "real_success": "False",
+   "qwen4max_label": "borderline",
+   "caption": "book not visible, gripper over the back compartment; caddy geometry distorted"
+  },
+  {
+   "file": "t5_bimag1.png",
+   "frame_id": "f00101",
+   "model": "cosmos",
+   "task": "T0",
+   "level": "K6",
+   "real_success": "False",
+   "qwen4max_label": "borderline",
+   "caption": "book not visible anywhere while the gripper is over the caddy"
+  }
+ ],
+ "t3": [
+  {
+   "file": "t3_bimag0.png",
+   "frame_id": "f00126",
+   "model": "openwam",
+   "task": "T1",
+   "level": "F160",
+   "real_success": "False",
+   "qwen4max_label": "borderline",
+   "caption": "drawer looks shut, but the cabinet front is a warped flat slab (distortion)"
+  },
+  {
+   "file": "t3_bimag1.png",
+   "frame_id": "f00164",
+   "model": "lingbot",
+   "task": "T1",
+   "level": "K3",
+   "real_success": "False",
+   "qwen4max_label": "borderline",
+   "caption": "drawer looks shut, but the gripper end is melted (distortion)"
+  }
+ ],
+ "t2": [
+  {
+   "file": "t2_bimag0.png",
+   "frame_id": "f01825",
+   "model": "openwam",
+   "task": "T2",
+   "level": "NR4",
+   "real_success": "False",
+   "qwen4max_label": "borderline",
+   "caption": "pot merged with the gripper at the stove edge (distortion)"
+  }
+ ],
+ "t4": [
+  {
+   "file": "t4_bimag0.png",
+   "frame_id": "f02866",
+   "model": "openwam",
+   "task": "T3",
+   "level": "NR3",
+   "real_success": "False",
+   "qwen4max_label": "borderline",
+   "caption": "yellow mug, gripper fingers and the plate under it are fused and deformed: placed or still held?"
+  },
+  {
+   "file": "t4_bimag1.png",
+   "frame_id": "f01240",
+   "model": "lingbot",
+   "task": "T3",
+   "level": "NL5",
+   "real_success": "False",
+   "qwen4max_label": "borderline",
+   "caption": "yellow mug and gripper melted into one blob (distortion)"
+  }
+ ],
+ "t6": [
+  {
+   "file": "t6_bimag0.png",
+   "frame_id": "f00220",
+   "model": "openwam",
+   "task": "T4",
+   "level": "K8",
+   "real_success": "False",
+   "qwen4max_label": "borderline",
+   "caption": "mug on the plate but tipped onto its side; pudding right of plate"
+  },
+  {
+   "file": "t6_bimag1.png",
+   "frame_id": "f00077",
+   "model": "cosmos",
+   "task": "T4",
+   "level": "G3",
+   "real_success": "False",
+   "qwen4max_label": "borderline",
+   "caption": "pudding right at the plate edge, partly hidden by the gripper"
+  }
+ ]
+}

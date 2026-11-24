@@ -52,6 +52,7 @@ button:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px sol
 .refpair{display:grid;grid-template-columns:1fr 1fr;gap:3px;width:220px;max-width:100%}
 .refpair img{width:100%;border-radius:5px;background:#000;cursor:zoom-in;display:block}
 .refcap{font-size:11px;color:var(--muted);margin-top:4px}
+.refimag{height:150px;max-width:100%;object-fit:contain;border-radius:5px;background:#000;cursor:zoom-in;display:block}
 figure{margin:0}
 figcaption{font-size:12px;color:var(--muted);margin-top:4px}
 .mrow{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:14px 0;background:var(--card)}
@@ -385,7 +386,10 @@ $("btnNext").onclick = () => step(1);
 // 2026-11-24：borderline 按判别规则（judge_prompt.md）定义；原 T0/T1/T4 的“快完成”例按规则属失败，移入 FAILURE 行
 const REF_N = { t5: { success: 3, borderline: 0, fail: 6 }, t3: { success: 2, borderline: 0, fail: 4 },
   t2: { success: 2, borderline: 1, fail: 2 }, t4: { success: 2, borderline: 1, fail: 3 }, t6: { success: 2, borderline: 0, fail: 4 } };
-const REF_CAP = { t5_fail5: "almost done — still FAILURE", t3_fail3: "almost done — still FAILURE", t6_fail3: "almost done — still FAILURE" };
+const REF_CAP = { t5_fail5: "almost done — still FAILURE", t3_fail3: "almost done — still FAILURE", t6_fail3: "almost done — still FAILURE",
+  t2_borderline0: "real · pot held at the stove edge", t4_borderline0: "real · mug held just above its plate" };
+// 想象帧的 borderline 例（主视角，来自 qwen4-max 判 borderline 并按规则人工核对；来源 cards/ref3/provenance_borderline_imag.json）
+const REF_IMAG = {"t5": [["t5_bimag0.png", "book not visible, gripper over the back compartment; caddy geometry distorted"], ["t5_bimag1.png", "book not visible anywhere while the gripper is over the caddy"]], "t3": [["t3_bimag0.png", "drawer looks shut, but the cabinet front is a warped flat slab (distortion)"], ["t3_bimag1.png", "drawer looks shut, but the gripper end is melted (distortion)"]], "t2": [["t2_bimag0.png", "pot merged with the gripper at the stove edge (distortion)"]], "t4": [["t4_bimag0.png", "yellow mug, gripper fingers and the plate under it are fused and deformed: placed or still held?"], ["t4_bimag1.png", "yellow mug and gripper melted into one blob (distortion)"]], "t6": [["t6_bimag0.png", "mug on the plate but tipped onto its side; pudding right of plate"], ["t6_bimag1.png", "pudding right at the plate edge, partly hidden by the gripper"]]};
 const REF_ROWS = [
   ["success", "ok", "✓ SUCCESS — every task condition is clearly satisfied", ""],
   ["borderline", "mid", "~ BORDERLINE — you cannot decide between success and not",
@@ -400,6 +404,8 @@ function renderRefs(task){
     Array.from({ length: n[k] }, (_, j) => `<div><div class="refpair"><img data-ref="cards/ref3/${task}_${k}${j}_main.png?v=2" alt="${k} example ${j + 1}, main camera">` +
       `<img data-ref="cards/ref3/${task}_${k}${j}_wrist.png?v=2" alt="${k} example ${j + 1}, wrist camera"></div>` +
       `<div class="refcap">${esc(REF_CAP[`${task}_${k}${j}`] || "main · wrist")}</div></div>`).join("") +
+    (k === "borderline" ? (REF_IMAG[task] || []).map(([f, cap]) => `<div style="width:230px;max-width:100%"><img class="refimag" data-ref="cards/ref3/${f}?v=1" alt="imagined borderline example">` +
+      `<div class="refcap">imagined · ${esc(cap)}</div></div>`).join("") : "") +
     `</div></div>`).join("");
   document.querySelectorAll("#refbox img[data-ref]").forEach(el => { setImg(el, el.dataset.ref); el.onclick = () => zoom(el.src); });
 }
