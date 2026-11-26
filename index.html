@@ -86,6 +86,12 @@ figcaption{font-size:12px;color:var(--muted);margin-top:4px}
 textarea{font-size:13px;padding:4px 8px;margin-top:4px}
 .part.none{font-size:13px}
 a{color:var(--accent)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
+.tabs a{padding:5px 12px;border:1px solid var(--line);border-radius:8px;text-decoration:none;color:var(--fg);font-size:14px}
+.tabs a.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.imain{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:16px;align-items:start}
+@media (max-width:900px){ .imain{grid-template-columns:1fr} }
+#iImg{max-width:420px}
 #lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:9;cursor:zoom-out}
 #lightbox img{max-width:98vw;max-height:96vh}
 </style>
@@ -93,7 +99,7 @@ a{color:var(--accent)}
 <body>
 <div class="wrap">
   <h1>WM-Verdict Human Annotation</h1>
-  <div class="sub">One page = one test case, run by four models. Judge each REAL execution and each IMAGINED last frame on its own.</div>
+  <div class="sub" id="subTxt">One page = one test case, run by four models. Judge each REAL execution and each IMAGINED last frame on its own.</div>
 
   <div id="login" class="panel" hidden>
     <h3 style="margin-top:0">Sign in</h3>
@@ -111,6 +117,7 @@ a{color:var(--accent)}
 
   <div id="app" hidden>
     <div class="panel">
+      <nav class="tabs"><a id="tabPages" href="./">Same-case pages</a><a id="tabImag" href="./?view=imag">Imagined frames</a></nav>
       <div class="row" style="justify-content:space-between">
         <div class="row">
           <span id="who" class="meta"></span>
@@ -138,6 +145,28 @@ a{color:var(--accent)}
         <span class="kbd"><b>1</b>–<b>4</b> answer highlighted · <b>←</b>/<b>→</b> previous / next group</span>
       </div>
       <p id="saveMsg" class="meta"></p>
+    </div>
+
+    <div id="imagPanel" class="panel" hidden>
+      <div class="desc" id="iTaskDesc"></div>
+      <div class="imain">
+        <div class="part imag">
+          <h3>IMAGINED</h3>
+          <p class="warnline" id="iWarn"></p>
+          <img id="iImg" class="judged" alt="imagined last frame">
+          <p class="q" id="iQ"></p>
+          <div class="labels" id="iLabels"></div>
+          <textarea id="iNote" rows="2" placeholder="Note (optional)"></textarea>
+          <div class="row" style="margin-top:10px">
+            <button id="iPrev" class="ghost">← Previous</button>
+            <button id="iNext" class="ghost">Next →</button>
+            <button id="iSkip" class="ghost">Next unanswered</button>
+          </div>
+          <p class="kbd"><b>1</b>–<b>4</b> answer (then moves on) · <b>←</b>/<b>→</b> previous / next frame</p>
+          <p id="iSaveMsg" class="meta"></p>
+        </div>
+        <div id="iRefbox" class="refbox3"></div>
+      </div>
     </div>
   </div>
   <p id="fatal" class="err"></p>
@@ -191,6 +220,11 @@ function pertText(lv){
 const REAL_Q = "Did the real execution complete the task? (judge the boxed final frame)";
 const IMAG_Q = "Does the imagined frame show the task completed?";
 const IMAG_WARN = "The world model's own prediction at its last planning call — not a camera frame. Judge this image on its own.";
+
+// Which page: default = same-case pages; ?view=imag = imagined-frames view (one frame per screen, see loadImag)
+const VIEW = new URLSearchParams(location.search).get("view") === "imag" ? "imag" : "pages";
+$(VIEW === "imag" ? "tabImag" : "tabPages").classList.add("on");
+if (VIEW === "imag") $("subTxt").textContent = "One imagined frame per screen. Each image is a world model's predicted last frame. Judge only what the image shows.";
 
 let me = null, P = null, pages = [], cells = [], cardOf = new Map(), mine = new Map(), idx = 0, nQ = 0;
 const drafts = new Map();
@@ -263,7 +297,7 @@ async function enter(user){
       return;
     }
   }
-  await loadAll();
+  await (VIEW === "imag" ? loadImag() : loadAll());
 }
 
 // 加载提速（2026-11-23）：原来卡片按 1000 条一批、标注按 400 个 id 一批全部串行（约 45 次往返）。
@@ -395,11 +429,11 @@ const REF_ROWS = [
   ["borderline", "mid", "~ BORDERLINE — you cannot decide between success and not",
    "Use it when the task looks complete but the image shows generation distortion (missing corner, warped object, melted gripper), or when the key part is hidden / sits right at the edge as the task rules describe. “Almost done but not finished” is NOT borderline — it is a failure."],
   ["fail", "bad", "✗ FAILURE — clearly not satisfied (including “almost done”)", ""]];
-let refTask = null;
-function renderRefs(task){
-  if (task === refTask) return; refTask = task;
+const refTask = {};
+function renderRefs(task, box = "refbox"){
+  if (task === refTask[box]) return; refTask[box] = task;
   const n = REF_N[task] || { success: 0, borderline: 0, fail: 0 };
-  $("refbox").innerHTML = REF_ROWS.map(([k, cls, title, rule]) => `<div class="refrow ${cls}"><h3>${title}</h3>` +
+  $(box).innerHTML = REF_ROWS.map(([k, cls, title, rule]) => `<div class="refrow ${cls}"><h3>${title}</h3>` +
     (rule ? `<p class="refcap" style="font-size:12px;margin:0 0 6px">${esc(rule)}</p>` : "") + `<div class="ex">` +
     Array.from({ length: n[k] }, (_, j) => `<div><div class="refpair"><img data-ref="cards/ref3/${task}_${k}${j}_main.png?v=2" alt="${k} example ${j + 1}, main camera">` +
       `<img data-ref="cards/ref3/${task}_${k}${j}_wrist.png?v=2" alt="${k} example ${j + 1}, wrist camera"></div>` +
@@ -407,7 +441,7 @@ function renderRefs(task){
     (k === "borderline" ? (REF_IMAG[task] || []).map(([f, cap]) => `<div style="width:230px;max-width:100%"><img class="refimag" data-ref="cards/ref3/${f}?v=1" alt="imagined borderline example">` +
       `<div class="refcap">imagined · ${esc(cap)}</div></div>`).join("") : "") +
     `</div></div>`).join("");
-  document.querySelectorAll("#refbox img[data-ref]").forEach(el => { setImg(el, el.dataset.ref); el.onclick = () => zoom(el.src); });
+  document.querySelectorAll(`#${box} img[data-ref]`).forEach(el => { setImg(el, el.dataset.ref); el.onclick = () => zoom(el.src); });
 }
 document.addEventListener("keydown", e => {
   if ($("pagePanel").hidden || e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
@@ -418,6 +452,112 @@ document.addEventListener("keydown", e => {
     const b = el && el.querySelectorAll(".labels button")[+e.key - 1];
     if (b) b.click();
   }
+});
+
+// ---------- Imagined-frames view (?view=imag) ----------
+// Cards of the round named IMAG_ROUND, one per screen, in the round's fixed order (sort_key), the same for every
+// rater. Start-up: round id by name -> [one count query + parallel card pages] in parallel with the signed-in
+// user's own labels (by user_id, restricted to this round through the cards relation).
+const IMAG_ROUND = "r5_imagined_20261125";
+const T_OF = { t5: "T0", t3: "T1", t2: "T2", t4: "T3", t6: "T4" };
+let iCards = [], iPos = 0, iMine = new Map(), iChain = Promise.resolve();
+const iDrafts = new Map();
+async function fetchRoundCards(rid){
+  const { count, error } = await sb.from("cards").select("id", { count: "exact", head: true }).eq("round_id", rid);
+  if (error) throw error;
+  const n = Math.ceil((count || 0) / STEP) || 1;
+  const parts = await Promise.all(Array.from({ length: n }, (_, k) =>
+    sb.from("cards").select("id,unit_id,task,question,label_set,img_url,sort_key").eq("round_id", rid)
+      .order("sort_key").order("id").range(k * STEP, k * STEP + STEP - 1)
+      .then(({ data, error }) => { if (error) throw error; return data || []; })));
+  const out = parts.flat();
+  if (out.length < (count || 0)) throw new Error(`cards: got ${out.length} of ${count}`);
+  return out.sort((a, b) => (a.sort_key - b.sort_key) || (a.id - b.id));
+}
+async function fetchMineInRound(rid){
+  try {
+    const out = [];
+    for (let from = 0; ; from += STEP) {
+      const { data, error } = await sb.from("annotations").select("card_id,label,note,cards!inner(round_id)")
+        .eq("user_id", me.id).eq("cards.round_id", rid).order("card_id").range(from, from + STEP - 1);
+      if (error) throw error;
+      out.push(...(data || []));
+      if (!data || data.length < STEP) return out;
+    }
+  } catch (e) { return fetchMine(); }          // fallback: all own labels by user_id, filtered below
+}
+async function loadImag(){
+  $("cellSel").hidden = true; $("groupSel").hidden = true;
+  $("iWarn").textContent = IMAG_WARN;
+  let rows, myAnn;
+  try {
+    const rr = await sb.from("rounds").select("id").eq("name", IMAG_ROUND);
+    if (rr.error) throw rr.error;
+    if (!rr.data || !rr.data.length) throw new Error("this set is not open yet");
+    const rid = rr.data[0].id;
+    [rows, myAnn] = await Promise.all([fetchRoundCards(rid), fetchMineInRound(rid)]);
+  } catch (e) { $("fatal").textContent = "Could not load: " + (e.message || e); return; }
+  iCards = rows;
+  const ids = new Set(rows.map(c => c.id));
+  iMine = new Map();
+  myAnn.forEach(a => { if (ids.has(a.card_id)) iMine.set(a.card_id, { card_id: a.card_id, label: a.label, note: a.note }); });
+  iPos = iCards.findIndex(c => !iMine.has(c.id)); if (iPos < 0) iPos = 0;
+  renderImag();
+}
+function iSrc(c){ return c.img_url || `cards/r5/${c.unit_id}.webp`; }
+function renderImag(){
+  const done = iCards.filter(c => iMine.has(c.id)).length;
+  $("progBar").style.width = iCards.length ? (100 * done / iCards.length) + "%" : "0%";
+  $("progTxt").textContent = `${done} / ${iCards.length} answered · frame ${iPos + 1} of ${iCards.length}`;
+  if (!iCards.length) { $("imagPanel").hidden = true; return; }
+  $("imagPanel").hidden = false;
+  const c = iCards[iPos], ti = TASK_INFO[c.task] || { title: c.task };
+  $("iTaskDesc").innerHTML = `<b>Task ${esc(T_OF[c.task] || "")}</b> ${esc(ti.title)}${ti.crit ? ` — completed = ${esc(ti.crit)}` : ""}`;
+  renderRefs(c.task, "iRefbox");
+  const img = $("iImg");
+  setImg(img, [iSrc(c)]); img.onclick = () => zoom(img.src);
+  $("iQ").textContent = c.question || IMAG_Q;
+  const cur = iMine.get(c.id);
+  $("iLabels").innerHTML = (c.label_set || []).map((l, i) =>
+    `<button data-l="${esc(l)}" class="${cur && cur.label === l ? "sel" : ""}"><b>${i + 1}</b> ${esc(l)}</button>`).join("");
+  document.querySelectorAll("#iLabels button").forEach(b => b.onclick = () => saveImag(c, b.dataset.l, true));
+  $("iNote").value = iDrafts.has(c.id) ? iDrafts.get(c.id) : (cur && cur.note) || "";
+  $("iPrev").disabled = iPos === 0;
+  $("iNext").disabled = iPos === iCards.length - 1;
+  $("iSaveMsg").textContent = cur ? `Saved: ${cur.label}` : "";
+  const nx = iCards[iPos + 1]; if (nx) { const p = new Image(); p.src = iSrc(nx); }     // preload the next frame
+}
+// saves run one after another, so a note saved on blur can never land after a label clicked right after it
+function saveImag(c, label, advance){
+  const note = $("iNote").value || null;
+  iChain = iChain.then(async () => {
+    const rec = { card_id: c.id, user_id: me.id, email: me.email, label, note, updated_at: new Date().toISOString() };
+    const { error } = await sb.from("annotations").upsert(rec, { onConflict: "card_id,user_id" });
+    if (error) { $("iSaveMsg").textContent = "Save failed: " + error.message; return; }
+    iMine.set(c.id, rec); iDrafts.delete(c.id);
+    if (advance && iCards[iPos] === c && iPos < iCards.length - 1) iPos++;
+    renderImag();
+  });
+  return iChain;
+}
+function iStep(d){ const j = iPos + d; if (j >= 0 && j < iCards.length) { iPos = j; renderImag(); } }
+$("iPrev").onclick = () => iStep(-1);
+$("iNext").onclick = () => iStep(1);
+$("iSkip").onclick = () => {
+  const j = iCards.findIndex((c, i) => i > iPos && !iMine.has(c.id));
+  const k = j >= 0 ? j : iCards.findIndex(c => !iMine.has(c.id));
+  if (k >= 0) { iPos = k; renderImag(); }
+};
+$("iNote").oninput = () => { if (iCards[iPos]) iDrafts.set(iCards[iPos].id, $("iNote").value); };
+$("iNote").onchange = () => {            // note edited after a label was given: save it with that label
+  const c = iCards[iPos], cur = c && iMine.get(c.id);
+  if (cur && ($("iNote").value || null) !== (cur.note || null)) saveImag(c, cur.label, false);
+};
+document.addEventListener("keydown", e => {
+  if (VIEW !== "imag" || $("imagPanel").hidden || ["TEXTAREA", "INPUT", "SELECT"].includes(e.target.tagName)) return;
+  if (e.key === "ArrowLeft") iStep(-1);
+  else if (e.key === "ArrowRight") iStep(1);
+  else if (/^[1-4]$/.test(e.key)) { const b = document.querySelectorAll("#iLabels button")[+e.key - 1]; if (b) b.click(); }
 });
 init();
 </script>
